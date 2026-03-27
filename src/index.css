@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@keyframes sonar-pulse {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.animate-sonar {
+  animation: sonar-pulse 1.5s ease-out infinite;
+}
+
+/* THE V12 SCROLLBAR & LAYOUT FIX */
+body {
+  overflow: hidden; /* Stops the whole page from rattling */
+}
+
+/* Force the Sidebar to the Wide Commander View */
+aside, .sidebar-container {
+  min-width: 420px !important;
+  width: 420px !important;
+  border-right: 2px solid #ea580c33 !important;
+}
+
+/* Make the Scrollbar thick and Orange so you can see it */
+::-webkit-scrollbar {
+  width: 15px !important;
+}
+::-webkit-scrollbar-thumb {
+  background: #ea580c !important;
+  border-radius: 5px;
+  border: 3px solid #000;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+/* Sharp and Clean UI - No Blurry CRT noise */
+.custom-scrollbar::-webkit-scrollbar { width: 15px !important; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #ea580c !important; border-radius: 5px; border: 3px solid #000; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #050505; }
+
+/* Memory-Trigger Buttons */
+.upload-btn-embossed {
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.4);
+  background: linear-gradient(145deg, #1e1e1e, #111111);
+}
+
+/* Color Coding Logic */
+.action-green { color: #22c55e; } /* Go/Send/Publish */
+.action-red { color: #ef4444; }   /* Stop/Cancel/Delete */
+
+/* Tags for SEO and Accessibility */
+[title]::after {
+  content: attr(title);
+  display: none; /* Accessible to screen readers and Alt-Tags */
+}

@@ -1,0 +1,5 @@
+{
+  "name": "AI Core Builder",
+  "description": "An AI-powered environment to build and iterate on applications from within.",
+  "requestFramePermissions": ["microphone"]
+}

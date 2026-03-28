@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import { exec } from "child_process";
 
 dotenv.config();
 
@@ -16,6 +17,25 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // THE BASH ENDPOINT (Sovereign Dispatch)
+  app.post("/api/dispatch", (req, res) => {
+    const { mode, commitMessage } = req.body;
+    
+    // Decide which "Bash" to run based on Public/Private toggle
+    // We execute in the current directory as it's the root of the project in this environment
+    const command = mode === 'PUBLIC' 
+      ? `git add . && git commit -m "${commitMessage || 'Sovereign Dispatch'}" && git push origin main`
+      : `git add . && git commit -m "Private Save: ${commitMessage || 'Vault Save'}"`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Dispatch Error:", stderr);
+        return res.status(500).json({ success: false, error: stderr || error.message });
+      }
+      res.json({ success: true, output: stdout });
+    });
+  });
 
   // AI Proxy Endpoint
   app.post("/api/ai/chat", async (req, res) => {

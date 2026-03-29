@@ -1,5 +1,5 @@
 {
-  "name": "AI Core Builder",
-  "description": "An AI-powered environment to build and iterate on applications from within.",
+  "name": "V12 Command Center",
+  "description": "The Sovereign AI Command Bridge for high-performance neural asset deployment and marketing.",
   "requestFramePermissions": ["microphone"]
 }

@@ -4,7 +4,7 @@ import {
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
   Key, Lock, Home, BarChart3, Download, Share2, 
-  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu,
+  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff,
   Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
   Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon
 } from "lucide-react";
@@ -71,147 +71,94 @@ const TierCard = ({ tier }: { tier: typeof TIERS[0] }) => (
   </div>
 );
 
-// THE PULSING NEURAL DIAMOND
-const NeuralDiamond = () => (
-  <div className="relative group cursor-pointer py-20 flex flex-col items-center">
-    {/* THE DIAMOND ICON */}
-    <div className="text-8xl relative z-10 transition-transform duration-700 group-hover:scale-125 group-hover:rotate-[360deg]">
-      💎
+const RevenueManifesto = () => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 p-10 bg-orange-500/5 border border-orange-500/20 rounded-[40px] backdrop-blur-3xl animate-in fade-in zoom-in duration-1000 max-w-7xl w-full">
+    <div className="space-y-4">
+      <h3 className="text-orange-500 font-black text-[12px] tracking-[0.2em]">01_SCALABILITY</h3>
+      <p className="text-zinc-400 text-[11px] leading-relaxed uppercase font-bold">
+        Deploy unlimited neural agents on the V12 Mainframe. No credit caps. No latency bottlenecks. Only raw processing power.
+      </p>
     </div>
-    
-    {/* THE NEURAL PULSE (The Orange Glow) */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-orange-500/30 rounded-full blur-[60px] group-hover:bg-orange-500/60 transition-all duration-1000 animate-pulse" />
-    
-    {/* THE KEYWORD BADGE */}
-    <div className="mt-8 px-4 py-1 border border-orange-500/20 rounded-full bg-orange-500/5 backdrop-blur-md">
-      <span className="text-[9px] font-black text-orange-500 uppercase tracking-[0.3em]">
-        Status: Neural_Core_Active
-      </span>
+    <div className="space-y-4 border-x border-zinc-800 px-8">
+      <h3 className="text-orange-500 font-black text-[12px] tracking-[0.2em]">02_RESIDUE_INCOME</h3>
+      <p className="text-zinc-400 text-[11px] leading-relaxed uppercase font-bold">
+        Publicly bash your agents to the MyCanvasLab network. Collect hosting fees for every neural mission executed by the community.
+      </p>
+    </div>
+    <div className="space-y-4">
+      <h3 className="text-orange-500 font-black text-[12px] tracking-[0.2em]">03_SOVEREIGN_CONTROL</h3>
+      <p className="text-zinc-400 text-[11px] leading-relaxed uppercase font-bold">
+        Your keys are your own. We provide the ship; you provide the command. Secure, encrypted, and architect-owned infrastructure.
+      </p>
     </div>
   </div>
 );
 
-// THE NEURAL DIAMOND LANDING HEADER
-const LandingPage = ({ onEnter }: { onEnter: () => void }) => (
-  <div className="min-h-screen bg-[#020202] text-white font-mono flex flex-col items-center pt-32 px-6 overflow-y-auto custom-scrollbar">
-    
-    {/* TOP NAVIGATION LOGO */}
-    <div className="fixed top-0 left-0 w-full p-8 flex justify-between items-center z-50 bg-[#020202]/80 backdrop-blur-md border-b border-zinc-900/50">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl filter drop-shadow-[0_0_10px_rgba(234,88,12,0.4)]">💎</span>
-        <span className="text-xl font-black tracking-tighter text-orange-500 uppercase">MYCANVASLAB</span>
+// THE SOVEREIGN LANDING CORE
+const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEnter: () => void }) => {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const features = [
+    { id: 'FORGE', title: 'NEURAL FORGE', desc: 'Custom Agent Creation & Deployment', keywords: 'White-Label AI, Neural Assets', icon: '⚒️' },
+    { id: 'BASH', title: 'SOVEREIGN BASH', desc: '1-Click GitHub to Hetzner Sync', keywords: 'CI/CD, High-Frequency Deploy', icon: '⚡' },
+    { id: 'VAULT', title: 'ASSET VAULT', desc: 'Secure Neural Storage & Privacy', keywords: 'Encrypted AI, Private LLM', icon: '💎' },
+    { id: 'HOST', title: 'ELITE HOSTING', desc: 'Dedicated Hetzner V12 Mainframe', keywords: 'High-Performance Hosting, Zero Latency', icon: '🌐' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#020202] text-white font-mono flex flex-col items-center pt-20 px-6 overflow-y-auto custom-scrollbar">
+      
+      {/* THE PULSING NEURAL DIAMOND (THE HEART) - PRIVATE ADMIN ACCESS */}
+      <div 
+        onClick={onAdminEnter}
+        className="py-20 group cursor-pointer flex flex-col items-center"
+      >
+        <div className="text-8xl transition-transform duration-700 group-hover:scale-125 group-hover:rotate-[360deg] filter drop-shadow-[0_0_40px_rgba(234,88,12,0.4)]">💎</div>
+        <h1 className="mt-8 text-6xl font-black uppercase tracking-tighter">MYCANVASLAB</h1>
+        <div className="mt-4 px-6 py-1 border border-orange-500/20 rounded-full bg-orange-500/5">
+          <span className="text-[10px] text-orange-500 font-black tracking-[0.4em] animate-pulse uppercase">Status: Noble_Stable</span>
+        </div>
       </div>
+
+      {/* THE KEYWORD-MAXED TACTICAL GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-10 max-w-7xl w-full">
+        {features.map((f) => (
+          <div 
+            key={f.id}
+            onMouseEnter={() => setHovered(f.id)}
+            onMouseLeave={() => setHovered(null)}
+            className={`p-8 rounded-3xl border transition-all duration-500 cursor-pointer ${
+              hovered === f.id ? 'border-orange-500/50 bg-orange-500/5 shadow-[0_0_30px_rgba(234,88,12,0.1)] scale-105' : 'border-zinc-800 bg-zinc-900/20'
+            }`}
+          >
+            <div className="text-3xl mb-6">{f.icon}</div>
+            <h3 className="text-sm font-black text-orange-500 mb-2">{f.title}</h3>
+            <p className="text-[11px] text-zinc-400 font-bold mb-4 uppercase leading-tight">{f.desc}</p>
+            <div className="pt-4 border-t border-zinc-800/50">
+              <span className="text-[8px] text-zinc-600 font-black tracking-widest uppercase">{f.keywords}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <RevenueManifesto />
+
+      {/* THE GLOBAL STATUS MONITOR (CLICKABLE) */}
       <button 
         onClick={onEnter}
-        className="px-6 py-2 border border-zinc-800 rounded-xl text-[10px] font-black uppercase text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all"
+        className="mt-20 px-10 py-4 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex items-center gap-6 hover:border-orange-500/30 transition-all mb-32"
       >
-        Access Lab
+        <div className="flex gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[10px] font-black text-zinc-500 uppercase">Latency: 14ms</span>
+        </div>
+        <div className="w-px h-4 bg-zinc-800" />
+        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Access Command Nexus →</span>
       </button>
+
     </div>
-
-    {/* THE PULSING NEURAL DIAMOND */}
-    <NeuralDiamond />
-
-    {/* KEYWORD-MAXED HEADLINE */}
-    <h1 className="text-center max-w-4xl text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none mb-6">
-      The Elite <span className="text-orange-500">Neural Laboratory</span> for High-Performance <span className="text-orange-500">AI Agents</span>
-    </h1>
-    
-    <p className="text-zinc-500 text-center max-w-2xl text-[11px] font-bold uppercase tracking-widest mb-12 leading-relaxed">
-      Deploy Sovereign Intelligence. Generate Residue Income. Bash up your vision on the Hetzner V12 Mainframe.
-    </p>
-
-    {/* AT-A-GLANCE TACTICAL GRID */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl mb-20">
-      {['AGENT_FORGE', 'AUTO_BASH', 'ELITE_HOSTING', 'NEURAL_VAULT'].map((item) => (
-        <div key={item} className="aspect-square bg-zinc-900/30 border border-zinc-800/50 rounded-3xl p-6 flex flex-col justify-between hover:border-orange-500/40 transition-all group">
-          <div className="text-2xl group-hover:scale-125 transition-transform duration-300">📦</div>
-          <span className="text-[10px] font-black tracking-widest text-zinc-600 group-hover:text-orange-500">{item}</span>
-        </div>
-      ))}
-    </div>
-
-    {/* FEATURE PREVIEW SECTION */}
-    <div className="w-full max-w-6xl space-y-20 mb-20">
-      <div className="grid md:grid-cols-2 gap-12 items-center">
-        <div className="space-y-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Command Bridge</h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">
-            The definitive Architect's Bridge for Sovereign Dispatch. Stage your code to Git and Bash up to production with a single click.
-          </p>
-          <button 
-            onClick={onEnter}
-            className="text-orange-500 text-[10px] font-black uppercase tracking-widest hover:underline"
-          >
-            Click here to see more →
-          </button>
-        </div>
-        <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
-          <img 
-            src="https://picsum.photos/seed/v12_bridge/800/400" 
-            alt="Command Bridge Preview" 
-            className="w-full h-auto opacity-80 hover:opacity-100 transition-opacity"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-12 items-center">
-        <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl order-2 md:order-1">
-          <img 
-            src="https://picsum.photos/seed/v12_control/800/400" 
-            alt="Control Center Preview" 
-            className="w-full h-auto opacity-80 hover:opacity-100 transition-opacity"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-        <div className="space-y-6 order-1 md:order-2">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Control Center</h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">
-            Manage your neural integrations, sync with GitHub, and secure your data with Supabase. Total control over your AI ecosystem.
-          </p>
-          <button 
-            onClick={onEnter}
-            className="text-orange-500 text-[10px] font-black uppercase tracking-widest hover:underline"
-          >
-            Click here to see more →
-          </button>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-12 items-center">
-        <div className="space-y-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Marketing Hub</h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">
-            Create, target, and dispatch high-performance AI campaigns across Facebook, Instagram, and TikTok. Automate your residue income with precision.
-          </p>
-          <button 
-            onClick={onEnter}
-            className="text-orange-500 text-[10px] font-black uppercase tracking-widest hover:underline"
-          >
-            Click here to see more →
-          </button>
-        </div>
-        <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
-          <img 
-            src="https://picsum.photos/seed/v12_marketing/800/400" 
-            alt="Marketing Hub Preview" 
-            className="w-full h-auto opacity-80 hover:opacity-100 transition-opacity"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      </div>
-    </div>
-
-    {/* THE CALL TO ACTION */}
-    <button 
-      onClick={onEnter}
-      className="px-12 py-5 bg-[#ea580c] text-black font-black rounded-2xl shadow-[0_0_40px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all uppercase tracking-widest mb-32"
-    >
-      ENTER THE LAB
-    </button>
-  </div>
-);
+  );
+};
 
 function App() {
   const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING'>('CREATOR');
@@ -231,7 +178,7 @@ function App() {
   const [creatorSubTab, setCreatorSubTab] = useState<'MISSION CONTROL' | 'PUBLISH / BASH'>('MISSION CONTROL');
   const [statsSubTab, setStatsSubTab] = useState<'METRICS' | 'WALL'>('METRICS');
   const [filesSubTab, setFilesSubTab] = useState<'FOLDERS' | 'TRANSFER'>('FOLDERS');
-  const [settingsSubTab, setSettingsSubTab] = useState<'INTEGRATIONS' | 'CONFIG'>('INTEGRATIONS');
+  const [settingsSubTab, setSettingsSubTab] = useState<'INTEGRATIONS' | 'CONFIG' | 'BILLING'>('INTEGRATIONS');
   const [isPublic, setIsPublic] = useState(false); // Default: Private
   const [isConnected, setIsConnected] = useState({ github: false, supabase: false });
   const [model, setModel] = useState<'GEMINI' | 'CHATGPT'>('GEMINI'); 
@@ -266,6 +213,9 @@ function App() {
   const [newPassword, setNewPassword] = useState("");
   const [credits, setCredits] = useState(4200);
   const [showTopUp, setShowTopUp] = useState(credits < 500);
+  const [activeLoginModal, setActiveLoginModal] = useState<string | null>(null);
+  const [socialLogins, setSocialLogins] = useState<Record<string, { username: string, apiKey: string }>>({});
+  const [loginInput, setLoginInput] = useState({ username: '', apiKey: '' });
 
   const creditOptions = [
     { label: '100 Credits / mo', price: '$10' },
@@ -299,6 +249,24 @@ function App() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const [isForSale, setIsForSale] = useState(false);
+
+  const handleRetract = () => {
+    setDispatchStatus('RETRACTING...');
+    setTerminal(prev => prev + `\n\n[System]: INITIATING_RETRACTION_PROTOCOL...\n[System]: DISCONNECTING_FROM_V12_MAINFRAME...\n[System]: ASSETS_RECALLED_TO_PRIVATE_VAULT.\n[System]: CLEARING_PUBLIC_CACHE...`);
+    setTimeout(() => {
+      setDispatchStatus('SYSTEM_IDLE');
+      setTerminal(prev => prev + `\n[System]: RETRACTION_COMPLETE. APP_UNPUBLISHED.`);
+    }, 2000);
+  };
+
+  const handleDemobilize = (agentName: string) => {
+    setAgents(prev => prev.map(agent => 
+      agent.name === agentName ? { ...agent, visibility: 'PRIVATE' as const } : agent
+    ));
+    setTerminal(prev => prev + `\n[System]: AGENT_RETRACTED: ${agentName}\n[System]: STATUS: PRIVATE_VAULT_ONLY`);
+  };
 
   const handleMobilize = (agentName: string) => {
     setAgents(prev => prev.map(agent => 
@@ -438,6 +406,14 @@ function App() {
     setNewPost("");
   };
 
+  const handleSaveToSupabase = () => {
+    setTerminal(prev => prev + `\n\n[System]: INITIATING_SUPABASE_PERSISTENCE...\n[System]: ENCRYPTING_NEURAL_ASSETS...\n[System]: ASSETS_STORED_IN_VAULT_PERMANENTLY.`);
+  };
+
+  const handlePushToGit = () => {
+    setTerminal(prev => prev + `\n\n[System]: INITIATING_GIT_SYNC...\n[System]: PUSHING_TO_HETZNER_V12_MAINFRAME...\n[System]: GIT_SYNC_COMPLETE.`);
+  };
+
   const renderCreatorView = () => (
     <div className="flex-1 flex flex-col relative bg-[#010101]">
       {/* TOP UTILITY STRIP */}
@@ -476,10 +452,26 @@ function App() {
 
         <div className="flex items-center gap-6">
            <div className="flex gap-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">
-              <button className="hover:text-white transition-colors">Save to Supabase</button>
-              <button className="hover:text-white transition-colors">Push to Git</button>
+              <button onClick={handleSaveToSupabase} className="hover:text-white transition-colors">Save to Supabase</button>
+              <button onClick={handlePushToGit} className="hover:text-white transition-colors">Push to Git</button>
            </div>
-           <button className="px-5 py-2 bg-white text-black text-[10px] font-black rounded-lg uppercase hover:bg-zinc-200 transition-all shadow-lg">Publish Live</button>
+           {dispatchStatus === 'LIVE_ON_GITHUB' || dispatchStatus === 'SAVED_TO_VAULT' ? (
+             <button 
+               onClick={handleRetract} 
+               className="px-5 py-2 bg-zinc-900 border border-red-500/30 text-red-500 text-[10px] font-black rounded-lg uppercase hover:bg-red-500/10 transition-all shadow-lg flex items-center gap-2"
+             >
+               <ShieldOff className="w-3 h-3" />
+               Unpublish
+             </button>
+           ) : (
+             <button 
+               onClick={handlePublish} 
+               disabled={dispatchStatus === 'BASHING_UP...' || dispatchStatus === 'RETRACTING...'}
+               className="px-5 py-2 bg-white text-black text-[10px] font-black rounded-lg uppercase hover:bg-zinc-200 transition-all shadow-lg disabled:opacity-50"
+             >
+               {dispatchStatus === 'BASHING_UP...' ? 'Bashing...' : 'Publish Live'}
+             </button>
+           )}
         </div>
       </div>
 
@@ -529,13 +521,23 @@ function App() {
                 {/* STEP 2: BASH UP (THE PUSH) */}
                 <button 
                   onClick={handlePublish}
-                  disabled={dispatchStatus === 'BASHING_UP...'}
+                  disabled={dispatchStatus === 'BASHING_UP...' || dispatchStatus === 'RETRACTING...'}
                   className="flex-1 py-4 bg-[#ea580c] text-black rounded-xl text-[10px] font-black uppercase shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Zap className={`w-3.5 h-3.5 fill-black ${dispatchStatus === 'BASHING_UP...' ? 'animate-pulse' : ''}`} />
                   {dispatchStatus === 'BASHING_UP...' ? '🔨 BASHING...' : '2. BASH UP NOW'}
                 </button>
               </div>
+
+              {dispatchStatus === 'DISPATCH_SUCCESSFUL. MISSION_COMPLETE.' && (
+                <button 
+                  onClick={handleRetract}
+                  className="w-full py-4 bg-zinc-900 border border-red-500/30 text-red-500 rounded-xl text-[10px] font-black uppercase hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  UNPUBLISH / RETRACT MISSION
+                </button>
+              )}
 
               <div className="h-px bg-zinc-900"></div>
 
@@ -573,6 +575,10 @@ function App() {
 
   const renderMarketingView = () => {
     const handlePlatformToggle = (platformId: string) => {
+      if (!socialLogins[platformId]) {
+        setActiveLoginModal(platformId);
+        return;
+      }
       setSelectedPlatforms((prev: any) => ({
         ...prev,
         [platformId]: !prev[platformId]
@@ -588,16 +594,103 @@ function App() {
     const handlePublish = () => {
       setIsPublishing(true);
       setPublishSuccess(false);
+      setTerminal(prev => prev + `\n\n[System]: INITIATING_DISPATCH_SEQUENCE...\n[System]: TARGET_PLATFORMS: ${Object.entries(selectedPlatforms).filter(([_, v]) => v).map(([k]) => k.toUpperCase()).join(', ')}\n[System]: ENCRYPTING_PAYLOAD...\n[System]: DISPATCHING_NEURAL_ASSETS...`);
       
       setTimeout(() => {
         setIsPublishing(false);
         setPublishSuccess(true);
+        setTerminal(prev => prev + `\n[System]: DISPATCH_SUCCESSFUL. MISSION_COMPLETE.`);
         setTimeout(() => setPublishSuccess(false), 3000);
       }, 2000);
     };
 
+    const handleSaveSocialLogin = () => {
+      if (activeLoginModal) {
+        setSocialLogins(prev => ({
+          ...prev,
+          [activeLoginModal]: { ...loginInput }
+        }));
+        setTerminal(prev => prev + `\n[System]: SECURE_LINK_ESTABLISHED: ${activeLoginModal.toUpperCase()}\n[System]: IDENTITY_VERIFIED: ${loginInput.username}`);
+        setActiveLoginModal(null);
+        setLoginInput({ username: '', apiKey: '' });
+      }
+    };
+
+    const renderSocialLoginModal = () => {
+      if (!activeLoginModal) return null;
+      const platform = PLATFORMS.find(p => p.id === activeLoginModal);
+      if (!platform) return null;
+
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#050505] border border-zinc-800 rounded-[32px] p-8 space-y-6 shadow-2xl relative overflow-hidden">
+            <div className={`absolute top-0 left-0 w-full h-1 ${platform.color}`} />
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${platform.color}`}>
+                  <platform.icon size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tighter">{platform.name} Login</h3>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Secure Neural Connection</p>
+                </div>
+              </div>
+              <button onClick={() => setActiveLoginModal(null)} className="text-zinc-500 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Username / Email</label>
+                <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                  <User size={16} className="text-zinc-700" />
+                  <input 
+                    type="text" 
+                    placeholder={`Enter ${platform.name} username`}
+                    value={loginInput.username}
+                    onChange={(e) => setLoginInput(prev => ({ ...prev, username: e.target.value }))}
+                    className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Access Token / Password</label>
+                <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                  <Lock size={16} className="text-zinc-700" />
+                  <input 
+                    type="password" 
+                    placeholder="Paste secure token..."
+                    value={loginInput.apiKey}
+                    onChange={(e) => setLoginInput(prev => ({ ...prev, apiKey: e.target.value }))}
+                    className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
+              <p className="text-[9px] text-zinc-500 leading-relaxed font-medium">
+                <span className="text-orange-500 font-black">NOTE:</span> Your credentials are encrypted and stored locally in your V12 Vault. We never see your raw passwords.
+              </p>
+            </div>
+
+            <button 
+              onClick={handleSaveSocialLogin}
+              className={`w-full py-4 rounded-xl text-black font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-2 transition-all bg-orange-500 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(234,88,12,0.3)]`}
+            >
+              Establish Connection
+            </button>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
+        {renderSocialLoginModal()}
         {/* TOP TABS */}
         <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
           {[
@@ -818,18 +911,27 @@ function App() {
                       </div>
                       <div>
                         <h3 className="font-black text-white uppercase tracking-widest text-sm">{platform.name}</h3>
-                        <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight">
-                          {platform.id === 'facebook' ? 'Connected as Admin User' : 'Not connected'}
+                        <p className={`text-[9px] font-bold uppercase tracking-tight ${socialLogins[platform.id] ? 'text-green-500' : 'text-zinc-600'}`}>
+                          {socialLogins[platform.id] ? `Connected as ${socialLogins[platform.id].username}` : 'Not connected'}
                         </p>
                       </div>
                     </div>
                     
-                    {platform.id === 'facebook' ? (
-                      <button className="px-4 py-2 border border-zinc-800 text-zinc-500 font-black uppercase text-[9px] tracking-widest rounded-lg hover:border-orange-500/50 hover:text-orange-500 transition-all">
+                    {socialLogins[platform.id] ? (
+                      <button 
+                        onClick={() => {
+                          setActiveLoginModal(platform.id);
+                          setLoginInput(socialLogins[platform.id]);
+                        }}
+                        className="px-4 py-2 border border-zinc-800 text-zinc-500 font-black uppercase text-[9px] tracking-widest rounded-lg hover:border-orange-500/50 hover:text-orange-500 transition-all"
+                      >
                         Manage
                       </button>
                     ) : (
-                      <button className="px-4 py-2 bg-zinc-900 text-white font-black uppercase text-[9px] tracking-widest rounded-lg hover:bg-zinc-800 transition-all">
+                      <button 
+                        onClick={() => setActiveLoginModal(platform.id)}
+                        className="px-4 py-2 bg-zinc-900 text-white font-black uppercase text-[9px] tracking-widest rounded-lg hover:bg-zinc-800 transition-all"
+                      >
                         Connect Account
                       </button>
                     )}
@@ -889,7 +991,7 @@ function App() {
       <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
         {[
           { id: 'METRICS', label: 'System Metrics' },
-          { id: 'WALL', label: 'The Wall Info' }
+          { id: 'WALL', label: 'Live Bash Monitor' }
         ].map(tab => (
           <button 
             key={tab.id}
@@ -929,27 +1031,35 @@ function App() {
         ) : (
           <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-black text-white tracking-tighter uppercase">The Wall Info</h2>
-              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Community Feed</span>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">The Global Feed</h2>
+                <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest animate-pulse">Live Bash Monitor Active</p>
+              </div>
+              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Community Neural Traffic</span>
             </div>
 
             {/* Post Input */}
-            <div className="bg-[#080808] border border-zinc-800 rounded-2xl p-4 space-y-4">
+            <div className="bg-[#080808] border border-orange-500/10 rounded-2xl p-4 space-y-4 shadow-[0_0_30px_rgba(234,88,12,0.05)]">
               <textarea 
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                placeholder="Leave a post on the wall..."
-                className="w-full bg-transparent outline-none resize-none text-sm text-zinc-300 placeholder-zinc-700 h-20"
+                placeholder="Bash a neural update to the global feed..."
+                className="w-full bg-transparent outline-none resize-none text-sm text-zinc-300 placeholder-zinc-700 h-20 font-mono"
               />
               <div className="flex items-center justify-between border-t border-zinc-900 pt-4">
-                <button className="text-zinc-600 hover:text-orange-500 transition-colors">
-                  <Image className="w-4 h-4" />
-                </button>
+                <div className="flex gap-4">
+                  <button className="text-zinc-600 hover:text-orange-500 transition-colors">
+                    <Image className="w-4 h-4" />
+                  </button>
+                  <button className="text-zinc-600 hover:text-orange-500 transition-colors">
+                    <Code className="w-4 h-4" />
+                  </button>
+                </div>
                 <button 
                   onClick={handleAddPost}
-                  className="px-6 py-2 bg-orange-500 text-black text-[10px] font-black rounded-lg uppercase hover:bg-orange-400 transition-all"
+                  className="px-6 py-2 bg-orange-500 text-black text-[10px] font-black rounded-lg uppercase hover:bg-orange-400 transition-all shadow-[0_0_15px_rgba(234,88,12,0.3)]"
                 >
-                  Post to Wall
+                  Bash to Feed
                 </button>
               </div>
             </div>
@@ -1069,12 +1179,19 @@ function App() {
                     <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${agent.visibility === 'PUBLIC' ? 'border-orange-500/50 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-600'}`}>
                       {agent.visibility}
                     </span>
-                    {agent.visibility === 'PRIVATE' && (
+                    {agent.visibility === 'PRIVATE' ? (
                       <button 
                         onClick={() => handleMobilize(agent.name)}
                         className="px-5 py-2 bg-white text-black text-[10px] font-black rounded-lg uppercase hover:bg-orange-500 hover:text-white transition-all shadow-lg"
                       >
                         Mobilize
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleDemobilize(agent.name)}
+                        className="px-5 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-black rounded-lg uppercase hover:border-red-500/50 hover:text-red-500 transition-all"
+                      >
+                        Retract
                       </button>
                     )}
                   </div>
@@ -1094,137 +1211,177 @@ function App() {
     </div>
   );
 
-  const renderSettingsView = () => (
-    <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
-      {/* TOP TABS */}
-      <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
-        {[
-          { id: 'INTEGRATIONS', label: 'Integrations' },
-          { id: 'CONFIG', label: 'App Config' }
-        ].map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => setSettingsSubTab(tab.id as any)}
-            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-300 ${settingsSubTab === tab.id ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.2)]' : 'border-zinc-800 text-zinc-600 bg-zinc-900/10 hover:border-orange-500/40 hover:text-orange-400 hover:bg-orange-500/5'}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+  const renderSettingsView = () => {
+    const handleSubscription = (tier: string) => {
+      setTerminal(prev => prev + `\n[System]: INITIATING_SECURE_PAYMENT: ${tier}_ELITE...`);
+      // Redirect to your Stripe / PayPal / Crypto link
+      window.location.href = `https://billing.mycanvaslab.com/checkout?plan=${tier}`;
+    };
 
-      <div className="p-8 max-w-3xl mx-auto w-full space-y-12 pb-32">
-        {settingsSubTab === 'INTEGRATIONS' ? (
-          <section className="space-y-12">
-            <div className="space-y-6">
-              <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural API Vault</h3>
-              <div className="bg-[#050505] border border-zinc-900 rounded-2xl p-8 space-y-8">
-                <div className="grid grid-cols-1 gap-6">
-                  {[
-                    { id: 'gemini', label: 'Gemini API Key', placeholder: 'Paste Gemini API Key...', icon: <Zap className="w-4 h-4 text-orange-500" /> },
-                    { id: 'chatgpt', label: 'OpenAI API Key', placeholder: 'Paste OpenAI API Key...', icon: <Key className="w-4 h-4 text-blue-500" /> },
-                    { id: 'kimi', label: 'Kimi API Key', placeholder: 'Paste Kimi API Key...', icon: <Cpu className="w-4 h-4 text-purple-500" /> }
-                  ].map((key) => (
-                    <div key={key.id} className={`space-y-2 p-4 rounded-2xl transition-all ${key.id === 'gemini' ? 'bg-orange-500/5 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.05)]' : ''}`}>
-                      <div className="flex items-center justify-between">
-                        <label className={`text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${key.id === 'gemini' ? 'text-orange-500' : 'text-zinc-500'}`}>
-                          {key.icon}
-                          {key.label}
-                        </label>
-                        {apiKeys[key.id as keyof typeof apiKeys] && (
-                          <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Active</span>
-                        )}
+    return (
+      <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
+        {/* TOP TABS */}
+        <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+          {[
+            { id: 'INTEGRATIONS', label: 'Integrations' },
+            { id: 'CONFIG', label: 'App Config' },
+            { id: 'BILLING', label: 'Billing' }
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setSettingsSubTab(tab.id as any)}
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-300 ${settingsSubTab === tab.id ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.2)]' : 'border-zinc-800 text-zinc-600 bg-zinc-900/10 hover:border-orange-500/40 hover:text-orange-400 hover:bg-orange-500/5'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-8 max-w-3xl mx-auto w-full space-y-12 pb-32">
+          {settingsSubTab === 'INTEGRATIONS' ? (
+            <section className="space-y-12">
+              <div className="space-y-6">
+                <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural API Vault</h3>
+                <div className="bg-[#050505] border border-zinc-900 rounded-2xl p-8 space-y-8">
+                  <div className="grid grid-cols-1 gap-6">
+                    {[
+                      { id: 'gemini', label: 'Gemini API Key', placeholder: 'Paste Gemini API Key...', icon: <Zap className="w-4 h-4 text-orange-500" /> },
+                      { id: 'chatgpt', label: 'OpenAI API Key', placeholder: 'Paste OpenAI API Key...', icon: <Key className="w-4 h-4 text-blue-500" /> },
+                      { id: 'kimi', label: 'Kimi API Key', placeholder: 'Paste Kimi API Key...', icon: <Cpu className="w-4 h-4 text-purple-500" /> }
+                    ].map((key) => (
+                      <div key={key.id} className={`space-y-2 p-4 rounded-2xl transition-all ${key.id === 'gemini' ? 'bg-orange-500/5 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.05)]' : ''}`}>
+                        <div className="flex items-center justify-between">
+                          <label className={`text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${key.id === 'gemini' ? 'text-orange-500' : 'text-zinc-500'}`}>
+                            {key.icon}
+                            {key.label}
+                          </label>
+                          {apiKeys[key.id as keyof typeof apiKeys] && (
+                            <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Active</span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <input 
+                            type="password"
+                            value={apiKeys[key.id as keyof typeof apiKeys]}
+                            onChange={(e) => handleKeyChange(key.id as any, e.target.value)}
+                            className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-sm outline-none transition-all text-zinc-300 pr-12 ${key.id === 'gemini' ? 'border-orange-500/30 focus:border-orange-500' : 'border-zinc-800 focus:border-orange-500/50'}`}
+                            placeholder={key.placeholder}
+                          />
+                          <Lock className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 ${key.id === 'gemini' ? 'text-orange-500/30' : 'text-zinc-700'}`} />
+                        </div>
                       </div>
-                      <div className="relative">
-                        <input 
-                          type="password"
-                          value={apiKeys[key.id as keyof typeof apiKeys]}
-                          onChange={(e) => handleKeyChange(key.id as any, e.target.value)}
-                          className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-sm outline-none transition-all text-zinc-300 pr-12 ${key.id === 'gemini' ? 'border-orange-500/30 focus:border-orange-500' : 'border-zinc-800 focus:border-orange-500/50'}`}
-                          placeholder={key.placeholder}
-                        />
-                        <Lock className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 ${key.id === 'gemini' ? 'text-orange-500/30' : 'text-zinc-700'}`} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-4 border-t border-zinc-900 flex justify-end">
-                  <button 
-                    onClick={() => {
-                      setTerminal(prev => prev + "\n[System]: Neural API Keys synchronized to local storage.");
-                      alert("API Keys saved successfully.");
-                    }}
-                    className="px-8 py-3 bg-orange-500 text-black font-black rounded-xl uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
-                  >
-                    Save & Sync Keys
-                  </button>
+                    ))}
+                  </div>
+                  <div className="pt-4 border-t border-zinc-900 flex justify-end">
+                    <button 
+                      onClick={() => {
+                        setTerminal(prev => prev + "\n[System]: Neural API Keys synchronized to local storage.");
+                        alert("API Keys saved successfully.");
+                      }}
+                      className="px-8 py-3 bg-orange-500 text-black font-black rounded-xl uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
+                    >
+                      Save & Sync Keys
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-6">
-              <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">External Connections</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <Github className="w-5 h-5 text-white" />
-                    <div>
-                      <p className="text-[11px] font-bold text-white">GitHub Repository</p>
-                      <p className="text-[9px] text-zinc-600">Sync your code to the cloud.</p>
+              <div className="space-y-6">
+                <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">External Connections</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
+                    <div className="flex items-center gap-4">
+                      <Github className="w-5 h-5 text-white" />
+                      <div>
+                        <p className="text-[11px] font-bold text-white">GitHub Repository</p>
+                        <p className="text-[9px] text-zinc-600">Sync your code to the cloud.</p>
+                      </div>
                     </div>
+                    <button 
+                      onClick={() => setShowApiVault(true)}
+                      className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
+                    >
+                      Configure
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setShowApiVault(true)}
-                    className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
-                  >
-                    Configure
-                  </button>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <Database className="w-5 h-5 text-[#3ecf8e]" />
-                    <div>
-                      <p className="text-[11px] font-bold text-white">Supabase Database</p>
-                      <p className="text-[9px] text-zinc-600">Manage your persistent data.</p>
+                  <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
+                    <div className="flex items-center gap-4">
+                      <Database className="w-5 h-5 text-[#3ecf8e]" />
+                      <div>
+                        <p className="text-[11px] font-bold text-white">Supabase Database</p>
+                        <p className="text-[9px] text-zinc-600">Manage your persistent data.</p>
+                      </div>
                     </div>
+                    <button 
+                      onClick={() => setShowApiVault(true)}
+                      className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
+                    >
+                      Configure
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setShowApiVault(true)}
-                    className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
-                  >
-                    Configure
-                  </button>
                 </div>
               </div>
+            </section>
+          ) : settingsSubTab === 'CONFIG' ? (
+            <section className="space-y-6">
+              <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">App Management</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <button className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-orange-500/20 transition-all">
+                  <Shield className="w-5 h-5 text-orange-500" />
+                  <p className="text-[11px] font-bold text-white">Private Mode</p>
+                  <p className="text-[9px] text-zinc-600">Restrict access to your lab.</p>
+                </button>
+                <button 
+                  onClick={() => setIsForSale(!isForSale)}
+                  className={`p-6 border rounded-xl text-left space-y-2 transition-all ${isForSale ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_20px_rgba(234,88,12,0.1)]' : 'bg-[#050505] border-zinc-900 hover:border-orange-500/20'}`}
+                >
+                  <Zap className={`w-5 h-5 ${isForSale ? 'text-orange-500' : 'text-zinc-600'}`} />
+                  <p className="text-[11px] font-bold text-white">{isForSale ? 'Listed on Marketplace' : 'Post for Sale'}</p>
+                  <p className="text-[9px] text-zinc-600">{isForSale ? 'Click to unpublish from marketplace.' : 'List your app on the marketplace.'}</p>
+                </button>
+                <button 
+                  onClick={() => setIsLoggedIn(false)}
+                  className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-red-500/20 transition-all group"
+                >
+                  <LogOut className="w-5 h-5 text-zinc-600 group-hover:text-red-500" />
+                  <p className="text-[11px] font-bold text-white">Terminate Session</p>
+                  <p className="text-[9px] text-zinc-600">Securely logout from V12 Command.</p>
+                </button>
+              </div>
+            </section>
+          ) : (
+            <div className="space-y-8 animate-in fade-in duration-700">
+              <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl">
+                <h3 className="text-orange-500 font-black text-[10px] mb-4 uppercase tracking-widest">Active_Subscription: GURU_ELITE</h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] text-zinc-400">NEXT_BILLING_DATE: 2026-04-29</span>
+                  <button className="px-4 py-2 bg-zinc-800 rounded-lg text-[9px] font-black hover:bg-zinc-700 transition-all">MANAGE_PLAN</button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => handleSubscription('BUSINESS')}
+                  className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-2xl hover:border-orange-500/30 transition-all text-left"
+                >
+                  <div className="text-[9px] text-zinc-500 font-black mb-1 uppercase">Business_Elite</div>
+                  <div className="text-lg font-black text-white">$99<span className="text-[10px] text-zinc-600">/MO</span></div>
+                </button>
+                
+                <button 
+                  onClick={() => handleSubscription('GURU')}
+                  className="p-4 bg-orange-500/10 border border-orange-500/40 rounded-2xl hover:scale-105 transition-all text-left"
+                >
+                  <div className="text-[9px] text-orange-500 font-black mb-1 uppercase">Guru_Elite</div>
+                  <div className="text-lg font-black text-white">$299<span className="text-[10px] text-zinc-600">/MO</span></div>
+                </button>
+              </div>
             </div>
-          </section>
-        ) : (
-          <section className="space-y-6">
-            <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">App Management</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <button className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-orange-500/20 transition-all">
-                <Shield className="w-5 h-5 text-orange-500" />
-                <p className="text-[11px] font-bold text-white">Private Mode</p>
-                <p className="text-[9px] text-zinc-600">Restrict access to your lab.</p>
-              </button>
-              <button className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-orange-500/20 transition-all">
-                <Zap className="w-5 h-5 text-orange-500" />
-                <p className="text-[11px] font-bold text-white">Post for Sale</p>
-                <p className="text-[9px] text-zinc-600">List your app on the marketplace.</p>
-              </button>
-              <button 
-                onClick={() => setIsLoggedIn(false)}
-                className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-red-500/20 transition-all group"
-              >
-                <LogOut className="w-5 h-5 text-zinc-600 group-hover:text-red-500" />
-                <p className="text-[11px] font-bold text-white">Terminate Session</p>
-                <p className="text-[9px] text-zinc-600">Securely logout from V12 Command.</p>
-              </button>
-            </div>
-          </section>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPricingView = () => (
     <div className="flex-1 flex flex-col bg-[#010101] p-8 overflow-y-auto custom-scrollbar">
@@ -1416,7 +1573,18 @@ function App() {
 
   if (!isLoggedIn) {
     if (showLanding) {
-      return <LandingPage onEnter={() => setShowLanding(false)} />;
+      return (
+        <LandingPage 
+          onEnter={() => {
+            setShowLanding(false);
+            setLoginMode('MEMBER');
+          }} 
+          onAdminEnter={() => {
+            setShowLanding(false);
+            setLoginMode('ADMIN');
+          }}
+        />
+      );
     }
     return (
       <div className="min-h-screen bg-[#020202] flex items-center justify-center p-6 font-mono">

@@ -37,6 +37,23 @@ async function startServer() {
     });
   });
 
+  // THE MASTER COMMAND: Add, Commit, and Push to GitHub
+  app.post('/api/bash-up', (req, res) => {
+    const { message } = req.body;
+    
+    // THE MASTER COMMAND: Add, Commit, and Push to GitHub
+    // We use the current directory as it's the root of the project
+    const command = `git add . && git commit -m "${message || 'V12 Master Bash'}" && git push origin main`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Bash-Up Error:", stderr);
+        return res.status(500).json({ success: false, error: stderr || error.message });
+      }
+      res.json({ success: true, output: stdout });
+    });
+  });
+
   // AI Proxy Endpoint
   app.post("/api/ai/chat", async (req, res) => {
     const { provider, model, prompt, history, systemInstruction, userApiKey } = req.body;

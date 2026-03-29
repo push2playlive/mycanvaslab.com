@@ -1,20 +1,234 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { 
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
   Key, Lock, Home, BarChart3, Download, Share2, 
-  Shield, Zap, Upload, Code, Eye, MessageSquare, User
+  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu,
+  Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
+  Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon
 } from "lucide-react";
 
 // STYLES: Tactical Glassmorphism
 const glassGrey = "bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/50";
 const glassOrange = "bg-orange-500/5 backdrop-blur-xl border border-orange-500/20";
 
+// STYLES: Tactical High-Contrast
+const tabActive = "border-orange-500/60 bg-orange-500/10 text-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.1)]";
+const tabInactive = "border-zinc-800 bg-zinc-900/20 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400";
+
+// STYLES: The Sovereign Palette
+const btnInactive = "bg-zinc-900/20 border border-zinc-800 text-zinc-600 hover:border-orange-500/50 hover:text-orange-400 hover:bg-orange-500/5";
+const btnActive = "bg-orange-500/10 border border-orange-500/60 text-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.15)]";
+
+// THE SOVEREIGN BUTTON ANCHOR
+const SidebarButton = ({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) => (
+  <button 
+    onClick={onClick}
+    className={`w-full p-4 mb-3 rounded-2xl flex items-center justify-between transition-all duration-300 group border ${
+      isActive 
+        ? "bg-orange-500/10 border-orange-500/60 text-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.15)]" 
+        : "bg-zinc-900/20 border-zinc-800 text-zinc-600 hover:border-orange-500/50 hover:text-orange-400 hover:bg-orange-500/5"
+    }`}
+  >
+    <div className="flex items-center gap-3">
+      <span className="text-lg">{icon}</span>
+      <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
+    </div>
+    {isActive && <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_#ea580c]" />}
+  </button>
+);
+
+const MOCK_GALLERY = [
+  { id: 1, type: 'image', url: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80', title: 'New Product Launch' },
+  { id: 2, type: 'image', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80', title: 'Behind the Scenes' },
+  { id: 3, type: 'video', url: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=400&q=80', title: 'Customer Testimonial' },
+  { id: 4, type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&q=80', title: 'Office Setup' },
+];
+
+const PLATFORMS = [
+  { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-blue-600' },
+  { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-pink-600' },
+  { id: 'tiktok', name: 'TikTok', icon: Share2, color: 'bg-black' },
+  { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-red-600' }
+];
+
+// THE ELITE TIER MATRIX
+const TIERS = [
+  { name: 'STARTUP ELITE', price: '$49', perks: '5 Agents / 1GB Neural Storage', color: 'zinc' },
+  { name: 'BUSINESS ELITE', price: '$99', perks: '20 Agents / 10GB Neural Storage', color: 'orange' },
+  { name: 'GURU ELITE', price: '$299', perks: 'Unlimited Agents / Private Hetzner Core', color: 'orange' }
+];
+
+const TierCard = ({ tier }: { tier: typeof TIERS[0] }) => (
+  <div className={`p-6 rounded-3xl border ${tier.color === 'orange' ? 'border-orange-500/30 bg-orange-500/5' : 'border-zinc-800 bg-zinc-900/20'} backdrop-blur-xl transition-all hover:border-orange-500/50 group`}>
+    <h4 className="text-[10px] font-black tracking-widest text-zinc-500 mb-2 uppercase">{tier.name}</h4>
+    <div className="text-3xl font-black mb-4 text-white">{tier.price}<span className="text-sm text-zinc-600">/mo</span></div>
+    <p className="text-[9px] text-zinc-400 mb-6 leading-relaxed">{tier.perks}</p>
+    <button className="w-full py-3 rounded-xl bg-orange-500 text-black text-[10px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(234,88,12,0.2)]">
+      ACTIVATE CORE
+    </button>
+  </div>
+);
+
+// THE PULSING NEURAL DIAMOND
+const NeuralDiamond = () => (
+  <div className="relative group cursor-pointer py-20 flex flex-col items-center">
+    {/* THE DIAMOND ICON */}
+    <div className="text-8xl relative z-10 transition-transform duration-700 group-hover:scale-125 group-hover:rotate-[360deg]">
+      💎
+    </div>
+    
+    {/* THE NEURAL PULSE (The Orange Glow) */}
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-orange-500/30 rounded-full blur-[60px] group-hover:bg-orange-500/60 transition-all duration-1000 animate-pulse" />
+    
+    {/* THE KEYWORD BADGE */}
+    <div className="mt-8 px-4 py-1 border border-orange-500/20 rounded-full bg-orange-500/5 backdrop-blur-md">
+      <span className="text-[9px] font-black text-orange-500 uppercase tracking-[0.3em]">
+        Status: Neural_Core_Active
+      </span>
+    </div>
+  </div>
+);
+
+// THE NEURAL DIAMOND LANDING HEADER
+const LandingPage = ({ onEnter }: { onEnter: () => void }) => (
+  <div className="min-h-screen bg-[#020202] text-white font-mono flex flex-col items-center pt-32 px-6 overflow-y-auto custom-scrollbar">
+    
+    {/* TOP NAVIGATION LOGO */}
+    <div className="fixed top-0 left-0 w-full p-8 flex justify-between items-center z-50 bg-[#020202]/80 backdrop-blur-md border-b border-zinc-900/50">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl filter drop-shadow-[0_0_10px_rgba(234,88,12,0.4)]">💎</span>
+        <span className="text-xl font-black tracking-tighter text-orange-500 uppercase">MYCANVASLAB</span>
+      </div>
+      <button 
+        onClick={onEnter}
+        className="px-6 py-2 border border-zinc-800 rounded-xl text-[10px] font-black uppercase text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all"
+      >
+        Access Lab
+      </button>
+    </div>
+
+    {/* THE PULSING NEURAL DIAMOND */}
+    <NeuralDiamond />
+
+    {/* KEYWORD-MAXED HEADLINE */}
+    <h1 className="text-center max-w-4xl text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none mb-6">
+      The Elite <span className="text-orange-500">Neural Laboratory</span> for High-Performance <span className="text-orange-500">AI Agents</span>
+    </h1>
+    
+    <p className="text-zinc-500 text-center max-w-2xl text-[11px] font-bold uppercase tracking-widest mb-12 leading-relaxed">
+      Deploy Sovereign Intelligence. Generate Residue Income. Bash up your vision on the Hetzner V12 Mainframe.
+    </p>
+
+    {/* AT-A-GLANCE TACTICAL GRID */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl mb-20">
+      {['AGENT_FORGE', 'AUTO_BASH', 'ELITE_HOSTING', 'NEURAL_VAULT'].map((item) => (
+        <div key={item} className="aspect-square bg-zinc-900/30 border border-zinc-800/50 rounded-3xl p-6 flex flex-col justify-between hover:border-orange-500/40 transition-all group">
+          <div className="text-2xl group-hover:scale-125 transition-transform duration-300">📦</div>
+          <span className="text-[10px] font-black tracking-widest text-zinc-600 group-hover:text-orange-500">{item}</span>
+        </div>
+      ))}
+    </div>
+
+    {/* FEATURE PREVIEW SECTION */}
+    <div className="w-full max-w-6xl space-y-20 mb-20">
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-6">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Command Bridge</h2>
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            The definitive Architect's Bridge for Sovereign Dispatch. Stage your code to Git and Bash up to production with a single click.
+          </p>
+          <button 
+            onClick={onEnter}
+            className="text-orange-500 text-[10px] font-black uppercase tracking-widest hover:underline"
+          >
+            Click here to see more →
+          </button>
+        </div>
+        <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+          <img 
+            src="https://picsum.photos/seed/v12_bridge/800/400" 
+            alt="Command Bridge Preview" 
+            className="w-full h-auto opacity-80 hover:opacity-100 transition-opacity"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl order-2 md:order-1">
+          <img 
+            src="https://picsum.photos/seed/v12_control/800/400" 
+            alt="Control Center Preview" 
+            className="w-full h-auto opacity-80 hover:opacity-100 transition-opacity"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+        <div className="space-y-6 order-1 md:order-2">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Control Center</h2>
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            Manage your neural integrations, sync with GitHub, and secure your data with Supabase. Total control over your AI ecosystem.
+          </p>
+          <button 
+            onClick={onEnter}
+            className="text-orange-500 text-[10px] font-black uppercase tracking-widest hover:underline"
+          >
+            Click here to see more →
+          </button>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-6">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Marketing Hub</h2>
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            Create, target, and dispatch high-performance AI campaigns across Facebook, Instagram, and TikTok. Automate your residue income with precision.
+          </p>
+          <button 
+            onClick={onEnter}
+            className="text-orange-500 text-[10px] font-black uppercase tracking-widest hover:underline"
+          >
+            Click here to see more →
+          </button>
+        </div>
+        <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+          <img 
+            src="https://picsum.photos/seed/v12_marketing/800/400" 
+            alt="Marketing Hub Preview" 
+            className="w-full h-auto opacity-80 hover:opacity-100 transition-opacity"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* THE CALL TO ACTION */}
+    <button 
+      onClick={onEnter}
+      className="px-12 py-5 bg-[#ea580c] text-black font-black rounded-2xl shadow-[0_0_40px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all uppercase tracking-widest mb-32"
+    >
+      ENTER THE LAB
+    </button>
+  </div>
+);
+
 function App() {
-  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS'>('CREATOR');
+  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING'>('CREATOR');
   const [activeTab, setActiveTab] = useState('PREVIEW');
-  const [creatorSubTab, setCreatorSubTab] = useState<'MISSION' | 'PUBLISH'>('MISSION');
+  const [marketingTab, setMarketingTab] = useState('create');
+  
+  // Marketing Form State
+  const [adCopy, setAdCopy] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [budget, setBudget] = useState(0);
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<any>({
+    facebook: true, instagram: true, tiktok: false, youtube: false
+  });
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
+  const [creatorSubTab, setCreatorSubTab] = useState<'MISSION CONTROL' | 'PUBLISH / BASH'>('MISSION CONTROL');
   const [statsSubTab, setStatsSubTab] = useState<'METRICS' | 'WALL'>('METRICS');
   const [filesSubTab, setFilesSubTab] = useState<'FOLDERS' | 'TRANSFER'>('FOLDERS');
   const [settingsSubTab, setSettingsSubTab] = useState<'INTEGRATIONS' | 'CONFIG'>('INTEGRATIONS');
@@ -27,14 +241,45 @@ function App() {
   const [apiKeys, setApiKeys] = useState({
     gemini: localStorage.getItem('MYCANVAS_GEMINI_KEY') || '',
     chatgpt: localStorage.getItem('MYCANVAS_CHATGPT_KEY') || '',
-    agent: localStorage.getItem('MYCANVAS_AGENT_KEY') || ''
+    agent: localStorage.getItem('MYCANVAS_AGENT_KEY') || '',
+    kimi: localStorage.getItem('MYCANVAS_KIMI_KEY') || ''
   });
   const [showApiVault, setShowApiVault] = useState(false);
+  const [showAiFeatures, setShowAiFeatures] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [posts, setPosts] = useState<{id: number, author: string, content: string, image?: string, timestamp: string}[]>([
     { id: 1, author: "Diamond Architect", content: "V12 Engine initialized. The lab is live.", timestamp: "2m ago" },
     { id: 2, author: "Noble Guest", content: "This UI is insane. Looking forward to the Agent Builder.", timestamp: "1h ago" }
   ]);
   const [newPost, setNewPost] = useState("");
+  const [dispatchStatus, setDispatchStatus] = useState('SYSTEM_IDLE');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [loginMode, setLoginMode] = useState<'ADMIN' | 'MEMBER'>('ADMIN');
+  const [authView, setAuthView] = useState<'LOGIN' | 'FORGOT' | 'RESET'>('LOGIN');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [credits, setCredits] = useState(4200);
+  const [showTopUp, setShowTopUp] = useState(credits < 500);
+
+  const creditOptions = [
+    { label: '100 Credits / mo', price: '$10' },
+    { label: '500 Credits / mo', price: '$40' },
+    { label: '1000 Credits / mo', price: '$75' },
+    { label: 'UNLIMITED (GURU)', price: '$299' }
+  ];
+
+  const [agents, setAgents] = useState([
+    { name: "Market_Analyzer_v1", visibility: "PRIVATE", fee: "0.05 / req", status: "RUNNING" },
+    { name: "Code_Architect_v4", visibility: "PUBLIC", fee: "0.12 / req", status: "RUNNING" },
+    { name: "Social_Bot_Alpha", visibility: "PRIVATE", fee: "0.02 / req", status: "STOPPED" },
+    { name: "Neural_Net_Beta", visibility: "PRIVATE", fee: "0.08 / req", status: "ERROR" }
+  ]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const terminalEndRef = useRef<HTMLDivElement>(null);
 
@@ -42,35 +287,75 @@ function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAgents(prev => prev.map(agent => {
+        if (Math.random() > 0.95) {
+          const statuses: ('RUNNING' | 'STOPPED' | 'ERROR')[] = ['RUNNING', 'STOPPED', 'ERROR'];
+          return { ...agent, status: statuses[Math.floor(Math.random() * statuses.length)] };
+        }
+        return agent;
+      }));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleMobilize = (agentName: string) => {
+    setAgents(prev => prev.map(agent => 
+      agent.name === agentName ? { ...agent, visibility: 'PUBLIC' as const } : agent
+    ));
+    setTerminal(prev => prev + `\n[System]: Mobilizing ${agentName}... Status: PUBLIC_BASH_READY.`);
+    setTimeout(scrollToBottom, 100);
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginEmail === 'mycanvas@utubemail.com' && loginPassword === 'admin123') {
+      setIsLoggedIn(true);
+      setTerminal(prev => prev + `\n\n[System]: Admin Access Granted. Welcome, Architect.`);
+    } else {
+      setTerminal(prev => prev + `\n\n[System]: Access Denied. Invalid Credentials.`);
+    }
+  };
+
   const handlePublish = async () => {
     const mode = isPublic ? 'PUBLIC' : 'PRIVATE';
+    setDispatchStatus('BASHING_UP...');
     setTerminal(prev => prev + `\n\n[System]: Initiating ${mode} BASH...`);
     
     try {
-      const response = await fetch('/api/dispatch', {
+      const endpoint = isPublic ? '/api/bash-up' : '/api/dispatch';
+      const body = isPublic 
+        ? { message: `V12 Update from Lab - ${new Date().toLocaleTimeString()}` }
+        : { mode: 'PRIVATE', commitMessage: `V12 Update from Lab - ${new Date().toLocaleTimeString()}` };
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode, commitMessage: 'V12 Sovereign Dispatch' })
+        body: JSON.stringify(body)
       });
       
       const result = await response.json();
       
       if (result.success) {
+        setDispatchStatus(isPublic ? 'LIVE_ON_GITHUB' : 'SAVED_TO_VAULT');
         setTerminal(prev => prev + `\n[System]: ${mode} BASH COMPLETE.\n[System]: Status: NOBLE_STABLE.`);
         if (result.output) {
           setTerminal(prev => prev + `\n[System]: Output: ${result.output.substring(0, 500)}...`);
         }
       } else {
+        setDispatchStatus('BASH_FAILED');
         setTerminal(prev => prev + `\n[System]: Dispatch Error: ${result.error || 'Unknown Error'}`);
       }
       
       setTimeout(scrollToBottom, 100);
     } catch (err) {
+      setDispatchStatus('CONNECTION_ERROR');
       setTerminal(prev => prev + '\n[System]: Dispatch Error. Check Connection Hub.');
     }
   };
 
-  const handleKeyChange = (provider: 'gemini' | 'chatgpt' | 'agent', value: string) => {
+  const handleKeyChange = (provider: 'gemini' | 'chatgpt' | 'agent' | 'kimi', value: string) => {
     const newKeys = { ...apiKeys, [provider]: value };
     setApiKeys(newKeys);
     localStorage.setItem(`MYCANVAS_${provider.toUpperCase()}_KEY`, value);
@@ -92,8 +377,8 @@ function App() {
         }
         const ai = new GoogleGenAI({ apiKey: key });
         const response = await ai.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents: input,
+          model: "gemini-3-flash-preview",
+          contents: [{ role: "user", parts: [{ text: input }] }],
           config: {
             systemInstruction: "You are the MyCanvasLab AI Commander. Your mission is to assist the Architect in building high-performance, income-generating web applications. You are technical, noble, and direct. You value the 'V12' power of the Hetzner mainframe. You do not make excuses; you provide solutions. You speak with the confidence of a Diamond."
           }
@@ -111,14 +396,26 @@ function App() {
           setIsLoading(false);
           return;
         }
-        // ChatGPT Simulation with Key
-        setTerminal(prev => prev + `\n\n[System]: ChatGPT Link established via Vault Key.`);
-        setTimeout(() => {
-          setTerminal(prev => prev + `\n\n[CHATGPT]: Mission parameters received. Neural processing active.`);
-          setIsLoading(false);
-          scrollToBottom();
-        }, 1000);
-        return;
+        
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: 'openai',
+            model: 'gpt-4o',
+            prompt: input,
+            history: [],
+            systemInstruction: "You are the MyCanvasLab AI Commander. Your mission is to assist the Architect in building high-performance, income-generating web applications. You are technical, noble, and direct. You value the 'V12' power of the Hetzner mainframe. You do not make excuses; you provide solutions. You speak with the confidence of a Diamond.",
+            userApiKey: key
+          })
+        });
+
+        const data = await res.json();
+        if (data.text) {
+          setTerminal(prev => prev + `\n\n[${model}]: ${data.text}`);
+        } else {
+          setTerminal(prev => prev + `\n\n[System]: Error - ${data.error || 'Mission Failed'}`);
+        }
       }
       setInput(''); // Clear after send
       setTimeout(scrollToBottom, 100);
@@ -146,20 +443,22 @@ function App() {
       {/* TOP UTILITY STRIP */}
       <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-6 flex items-center justify-between z-20">
         <div className="flex items-center gap-6">
-           {/* Sub-Tabs */}
-           <div className="flex gap-2">
-             {[
-               { id: 'MISSION', label: 'Mission Control' },
-               { id: 'PUBLISH', label: 'Publish / Bash' }
-             ].map(tab => (
-               <button 
-                 key={tab.id}
-                 onClick={() => setCreatorSubTab(tab.id as any)}
-                 className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-300 ${creatorSubTab === tab.id ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.2)]' : 'border-zinc-800 text-zinc-600 bg-zinc-900/10 hover:border-orange-500/40 hover:text-orange-400 hover:bg-orange-500/5'}`}
-               >
-                 {tab.label}
-               </button>
-             ))}
+           {/* THE TOP TAB BAR */}
+           <div className="flex gap-4 p-1 bg-black/40 border border-zinc-900 rounded-xl backdrop-blur-md">
+             {['MISSION CONTROL', 'PUBLISH / BASH'].map((tab) => {
+               const isActive = creatorSubTab === tab;
+               return (
+                 <button
+                   key={tab}
+                   onClick={() => setCreatorSubTab(tab as any)}
+                   className={`px-6 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all border ${
+                     isActive ? tabActive : tabInactive
+                   }`}
+                 >
+                   {tab}
+                 </button>
+               );
+             })}
            </div>
            <div className="w-px h-4 bg-zinc-800 mx-2"></div>
            <div className="flex bg-black/50 p-1 rounded-lg border border-zinc-800">
@@ -186,7 +485,7 @@ function App() {
 
       {/* STAGE */}
       <div className="flex-1 overflow-hidden p-8 flex flex-col relative">
-        {creatorSubTab === 'MISSION' ? (
+        {creatorSubTab === 'MISSION CONTROL' ? (
           <div className="w-full h-full bg-[#050505] border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
              {activeTab === 'PREVIEW' ? (
                <div className="flex-1 p-8 overflow-y-auto custom-scrollbar text-orange-500 whitespace-pre-wrap">
@@ -202,33 +501,56 @@ function App() {
         ) : (
           <div className="max-w-2xl mx-auto w-full mt-12 space-y-8">
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Dispatch Protocol</h2>
-              <p className="text-zinc-600 text-sm">Configure visibility and initiate deployment to Hetzner Core.</p>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Command Bridge</h2>
+              <p className="text-zinc-600 text-sm">The definitive Architect’s Bridge for Sovereign Dispatch.</p>
             </div>
             
-            <div className={`p-8 rounded-3xl space-y-6 ${glassOrange}`}>
+            <div className="p-8 bg-[#080808] border border-orange-500/20 rounded-3xl backdrop-blur-xl space-y-8">
               <div className="flex justify-between items-center">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white">Visibility Status</span>
-                    <p className="text-[9px] text-zinc-500 uppercase">Current Mode: {isPublic ? 'Public Access' : 'Private Vault'}</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsPublic(!isPublic)}
-                    className={`px-6 py-2 rounded-full text-[10px] font-black transition-all border ${isPublic ? 'bg-orange-500 text-black border-orange-400' : 'bg-zinc-900 text-zinc-500 border-zinc-800'}`}
-                  >
-                    {isPublic ? 'SWITCH TO PRIVATE' : 'SWITCH TO PUBLIC'}
-                  </button>
+                <h3 className="text-orange-500 text-[10px] font-black uppercase tracking-widest">Sovereign Dispatch</h3>
+                <span className={`text-[9px] font-bold ${dispatchStatus === 'BASHING_UP...' ? 'text-orange-400 animate-pulse' : 'text-zinc-600'}`}>
+                  {dispatchStatus}
+                </span>
               </div>
-              
-              <div className="h-px bg-orange-500/10"></div>
 
-              <button 
-                onClick={handlePublish}
-                className="w-full py-6 bg-[#ea580c] text-black font-black rounded-2xl shadow-[0_0_40px_rgba(234,88,12,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all uppercase text-sm tracking-[0.2em] flex items-center justify-center gap-3"
-              >
-                <Zap className="w-5 h-5 fill-black" />
-                Publish & Bash
-              </button>
+              <div className="flex gap-4">
+                {/* STEP 1: SEND TO GITHUB */}
+                <button 
+                  onClick={() => {
+                    setDispatchStatus('STAGED_FOR_DISPATCH');
+                    setTerminal(prev => prev + `\n[System]: Assets staged for dispatch. Ready for Bash.`);
+                  }}
+                  className="flex-1 py-4 bg-zinc-900 border border-zinc-800 rounded-xl text-[10px] font-bold text-zinc-400 hover:border-orange-500/50 transition-all flex items-center justify-center gap-2"
+                >
+                  <Code className="w-3.5 h-3.5" />
+                  1. STAGE TO GIT
+                </button>
+
+                {/* STEP 2: BASH UP (THE PUSH) */}
+                <button 
+                  onClick={handlePublish}
+                  disabled={dispatchStatus === 'BASHING_UP...'}
+                  className="flex-1 py-4 bg-[#ea580c] text-black rounded-xl text-[10px] font-black uppercase shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Zap className={`w-3.5 h-3.5 fill-black ${dispatchStatus === 'BASHING_UP...' ? 'animate-pulse' : ''}`} />
+                  {dispatchStatus === 'BASHING_UP...' ? '🔨 BASHING...' : '2. BASH UP NOW'}
+                </button>
+              </div>
+
+              <div className="h-px bg-zinc-900"></div>
+
+              <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-zinc-800">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase">Visibility Target</span>
+                  <p className="text-[9px] text-zinc-600 uppercase">{isPublic ? 'Public GitHub' : 'Private Vault'}</p>
+                </div>
+                <button 
+                  onClick={() => setIsPublic(!isPublic)}
+                  className={`px-6 py-2 rounded-full text-[10px] font-black transition-all ${isPublic ? 'bg-orange-500 text-black shadow-[0_0_15px_#ea580c]' : 'bg-zinc-800 text-zinc-600'}`}
+                >
+                  {isPublic ? 'PUBLIC' : 'PRIVATE'}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -248,6 +570,278 @@ function App() {
       </div>
     </div>
   );
+
+  const renderMarketingView = () => {
+    const handlePlatformToggle = (platformId: string) => {
+      setSelectedPlatforms((prev: any) => ({
+        ...prev,
+        [platformId]: !prev[platformId]
+      }));
+    };
+
+    const handlePromoteFromGallery = (item: any) => {
+      setSelectedMedia(item);
+      setMarketingTab('create');
+      setPublishSuccess(false);
+    };
+
+    const handlePublish = () => {
+      setIsPublishing(true);
+      setPublishSuccess(false);
+      
+      setTimeout(() => {
+        setIsPublishing(false);
+        setPublishSuccess(true);
+        setTimeout(() => setPublishSuccess(false), 3000);
+      }, 2000);
+    };
+
+    return (
+      <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
+        {/* TOP TABS */}
+        <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+          {[
+            { id: 'create', label: 'Campaign Creator', icon: Send },
+            { id: 'gallery', label: 'Media Gallery', icon: Grid },
+            { id: 'accounts', label: 'Connections', icon: Settings }
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setMarketingTab(tab.id)}
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-300 flex items-center gap-2 ${marketingTab === tab.id ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.2)]' : 'border-zinc-800 text-zinc-600 bg-zinc-900/10 hover:border-orange-500/40 hover:text-orange-400 hover:bg-orange-500/5'}`}
+            >
+              <tab.icon size={12} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-8">
+          {marketingTab === 'create' && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Create Post or Ad</h2>
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-orange-500/10 text-orange-500 rounded-full border border-orange-500/20">
+                  <TrendingUp size={14} />
+                  {budget > 0 ? `Paid Campaign ($${budget}/day)` : 'Free Organic Post'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Media Attachment</h3>
+                    {selectedMedia ? (
+                      <div className="relative rounded-xl overflow-hidden group border border-zinc-800">
+                        <img src={selectedMedia.url} alt="Selected" className="w-full h-64 object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm">
+                          <button 
+                            onClick={() => setSelectedMedia(null)}
+                            className="px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-black uppercase text-[10px] tracking-widest rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                          >
+                            Remove Media
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-zinc-900 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-zinc-900/30 hover:border-orange-500/30 transition-all cursor-pointer" onClick={() => setMarketingTab('gallery')}>
+                        <div className="flex gap-4 mb-3 text-zinc-700">
+                          <Image size={32} />
+                          <Video size={32} />
+                        </div>
+                        <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Click to select from Gallery</p>
+                        <p className="text-zinc-700 text-[9px] mt-1 font-medium">or drag and drop MP4 / JPG</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Post Copy & Links</h3>
+                    <textarea
+                      rows={5}
+                      placeholder="Write your amazing ad copy here... Don't forget to drop your link!"
+                      value={adCopy}
+                      onChange={(e) => setAdCopy(e.target.value)}
+                      className="w-full p-4 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none resize-none text-zinc-300 text-sm"
+                    ></textarea>
+                  </div>
+
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Keywords & Targeting</h3>
+                    <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                      <LinkIcon size={18} className="text-zinc-700" />
+                      <input 
+                        type="text" 
+                        placeholder="e.g. #technology, startup, innovation" 
+                        value={keywords}
+                        onChange={(e) => setKeywords(e.target.value)}
+                        className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
+                      />
+                    </div>
+                    <p className="text-[9px] text-zinc-700 mt-2 font-medium uppercase tracking-tighter">Our bot will suggest reciprocal tags based on these keywords.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Destinations</h3>
+                    <div className="space-y-2">
+                      {PLATFORMS.map(platform => (
+                        <label key={platform.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedPlatforms[platform.id] ? 'border-orange-500/50 bg-orange-500/5' : 'border-zinc-800 hover:bg-zinc-900/30'}`}>
+                          <input 
+                            type="checkbox" 
+                            className="hidden"
+                            checked={selectedPlatforms[platform.id]}
+                            onChange={() => handlePlatformToggle(platform.id)}
+                          />
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${platform.color} ${!selectedPlatforms[platform.id] && 'opacity-30 grayscale'}`}>
+                            <platform.icon size={16} />
+                          </div>
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${selectedPlatforms[platform.id] ? 'text-orange-500' : 'text-zinc-600'}`}>
+                            {platform.name}
+                          </span>
+                          {selectedPlatforms[platform.id] && (
+                            <CheckCircle2 size={16} className="ml-auto text-orange-500" />
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Daily Budget</h3>
+                      <span className="font-black text-lg text-orange-500">${budget}</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      step="5"
+                      value={budget}
+                      onChange={(e) => setBudget(parseInt(e.target.value))}
+                      className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                    />
+                    <div className="flex justify-between text-[8px] text-zinc-700 mt-2 font-black uppercase tracking-widest">
+                      <span>Free Post</span>
+                      <span>$100/day</span>
+                    </div>
+                    {budget === 0 ? (
+                      <div className="mt-4 p-3 bg-green-500/5 border border-green-500/20 text-green-500 rounded-lg text-[9px] font-bold uppercase tracking-tight flex items-start gap-2">
+                        <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+                        <p>This will be posted organically to your feeds for free.</p>
+                      </div>
+                    ) : (
+                      <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 text-blue-500 rounded-lg text-[9px] font-bold uppercase tracking-tight flex items-start gap-2">
+                        <DollarSign size={14} className="mt-0.5 shrink-0" />
+                        <p>This will be pushed as a sponsored ad to targeted users.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <button 
+                    onClick={handlePublish}
+                    disabled={isPublishing || Object.values(selectedPlatforms).every(v => !v)}
+                    className={`w-full py-4 rounded-xl text-black font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-2 transition-all ${isPublishing ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-[#ea580c] hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(234,88,12,0.3)]'}`}
+                  >
+                    {isPublishing ? (
+                      <div className="w-4 h-4 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        {budget > 0 ? 'Launch Ad Campaign' : 'Post Now'}
+                      </>
+                    )}
+                  </button>
+                  
+                  {publishSuccess && (
+                    <div className="p-3 bg-green-500/10 border border-green-500/30 text-green-500 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 animate-bounce">
+                      <CheckCircle2 size={16} />
+                      Successfully dispatched!
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {marketingTab === 'gallery' && (
+            <div className="max-w-6xl mx-auto space-y-6">
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase mb-8">Media Library</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {MOCK_GALLERY.map(item => (
+                  <div key={item.id} className="bg-[#050505] rounded-2xl overflow-hidden border border-zinc-900 group relative">
+                    <div className="relative h-48 border-b border-zinc-900">
+                      <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-lg backdrop-blur-sm border border-white/10">
+                        {item.type === 'video' ? <Video size={14} /> : <Image size={14} />}
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-white truncate text-sm">{item.title}</h3>
+                      <p className="text-[9px] text-zinc-600 mt-1 font-black uppercase tracking-widest">Added 2 days ago</p>
+                    </div>
+                    
+                    <div className="absolute inset-0 bg-orange-500/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4 backdrop-blur-sm">
+                      <button 
+                        onClick={() => handlePromoteFromGallery(item)}
+                        className="w-full py-3 bg-black text-orange-500 font-black uppercase text-[10px] tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-900 transform translate-y-4 group-hover:translate-y-0 transition-all shadow-2xl"
+                      >
+                        <Megaphone size={16} />
+                        Promote this item
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {marketingTab === 'accounts' && (
+            <div className="max-w-3xl mx-auto space-y-6">
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase mb-8">Platform Integrations</h2>
+              
+              <div className="bg-orange-500/5 border border-orange-500/20 p-4 rounded-xl flex gap-4 text-orange-500 mb-8">
+                <AlertCircle className="shrink-0 mt-1" size={20} />
+                <div>
+                  <h4 className="font-black uppercase text-[11px] tracking-widest">Security Notice for "Big League" Apps</h4>
+                  <p className="text-[10px] mt-1 font-medium leading-relaxed">Instead of pasting your raw passwords (which violates platform terms and gets bots banned), use the secure OAuth connections below. This generates an official "Access Token" so your admin panel can post legally and reliably.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {PLATFORMS.map(platform => (
+                  <div key={platform.id} className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white ${platform.color}`}>
+                        <platform.icon size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-white uppercase tracking-widest text-sm">{platform.name}</h3>
+                        <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight">
+                          {platform.id === 'facebook' ? 'Connected as Admin User' : 'Not connected'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {platform.id === 'facebook' ? (
+                      <button className="px-4 py-2 border border-zinc-800 text-zinc-500 font-black uppercase text-[9px] tracking-widest rounded-lg hover:border-orange-500/50 hover:text-orange-500 transition-all">
+                        Manage
+                      </button>
+                    ) : (
+                      <button className="px-4 py-2 bg-zinc-900 text-white font-black uppercase text-[9px] tracking-widest rounded-lg hover:bg-zinc-800 transition-all">
+                        Connect Account
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderHomeView = () => (
     <div className="flex-1 flex flex-col bg-[#010101] p-8 overflow-y-auto custom-scrollbar">
@@ -446,27 +1040,40 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {[
-                { name: "Market_Analyzer_v1", status: "PRIVATE", fee: "0.05 / req" },
-                { name: "Code_Architect_v4", status: "PUBLIC", fee: "0.12 / req" },
-                { name: "Social_Bot_Alpha", status: "PRIVATE", fee: "0.02 / req" }
-              ].map((agent, i) => (
+              {agents.map((agent, i) => (
                 <div key={i} className="bg-[#050505] border border-zinc-900 rounded-2xl p-6 flex items-center justify-between group hover:border-orange-500/20 transition-all">
                   <div className="flex items-center gap-6">
-                    <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                      <Cpu className={`w-6 h-6 ${agent.status === 'PUBLIC' ? 'text-orange-500' : 'text-zinc-600'}`} />
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center relative">
+                      <Cpu className={`w-6 h-6 ${agent.visibility === 'PUBLIC' ? 'text-orange-500' : 'text-zinc-600'}`} />
+                      <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#050505] ${
+                        agent.status === 'RUNNING' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
+                        agent.status === 'ERROR' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
+                        'bg-zinc-600'
+                      }`} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">{agent.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-white">{agent.name}</p>
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${
+                          agent.status === 'RUNNING' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
+                          agent.status === 'ERROR' ? 'border-red-500/30 text-red-500 bg-red-500/5' :
+                          'border-zinc-800 text-zinc-600 bg-zinc-900'
+                        }`}>
+                          {agent.status}
+                        </span>
+                      </div>
                       <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">Fee: {agent.fee}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${agent.status === 'PUBLIC' ? 'border-orange-500/50 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-600'}`}>
-                      {agent.status}
+                    <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${agent.visibility === 'PUBLIC' ? 'border-orange-500/50 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-600'}`}>
+                      {agent.visibility}
                     </span>
-                    {agent.status === 'PRIVATE' && (
-                      <button className="px-5 py-2 bg-white text-black text-[10px] font-black rounded-lg uppercase hover:bg-orange-500 hover:text-white transition-all shadow-lg">
+                    {agent.visibility === 'PRIVATE' && (
+                      <button 
+                        onClick={() => handleMobilize(agent.name)}
+                        className="px-5 py-2 bg-white text-black text-[10px] font-black rounded-lg uppercase hover:bg-orange-500 hover:text-white transition-all shadow-lg"
+                      >
                         Mobilize
                       </button>
                     )}
@@ -507,28 +1114,86 @@ function App() {
 
       <div className="p-8 max-w-3xl mx-auto w-full space-y-12 pb-32">
         {settingsSubTab === 'INTEGRATIONS' ? (
-          <section className="space-y-6">
-            <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">External Connections</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
-                <div className="flex items-center gap-4">
-                  <Github className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[11px] font-bold text-white">GitHub Repository</p>
-                    <p className="text-[9px] text-zinc-600">Sync your code to the cloud.</p>
-                  </div>
+          <section className="space-y-12">
+            <div className="space-y-6">
+              <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural API Vault</h3>
+              <div className="bg-[#050505] border border-zinc-900 rounded-2xl p-8 space-y-8">
+                <div className="grid grid-cols-1 gap-6">
+                  {[
+                    { id: 'gemini', label: 'Gemini API Key', placeholder: 'Paste Gemini API Key...', icon: <Zap className="w-4 h-4 text-orange-500" /> },
+                    { id: 'chatgpt', label: 'OpenAI API Key', placeholder: 'Paste OpenAI API Key...', icon: <Key className="w-4 h-4 text-blue-500" /> },
+                    { id: 'kimi', label: 'Kimi API Key', placeholder: 'Paste Kimi API Key...', icon: <Cpu className="w-4 h-4 text-purple-500" /> }
+                  ].map((key) => (
+                    <div key={key.id} className={`space-y-2 p-4 rounded-2xl transition-all ${key.id === 'gemini' ? 'bg-orange-500/5 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.05)]' : ''}`}>
+                      <div className="flex items-center justify-between">
+                        <label className={`text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${key.id === 'gemini' ? 'text-orange-500' : 'text-zinc-500'}`}>
+                          {key.icon}
+                          {key.label}
+                        </label>
+                        {apiKeys[key.id as keyof typeof apiKeys] && (
+                          <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Active</span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input 
+                          type="password"
+                          value={apiKeys[key.id as keyof typeof apiKeys]}
+                          onChange={(e) => handleKeyChange(key.id as any, e.target.value)}
+                          className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-sm outline-none transition-all text-zinc-300 pr-12 ${key.id === 'gemini' ? 'border-orange-500/30 focus:border-orange-500' : 'border-zinc-800 focus:border-orange-500/50'}`}
+                          placeholder={key.placeholder}
+                        />
+                        <Lock className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 ${key.id === 'gemini' ? 'text-orange-500/30' : 'text-zinc-700'}`} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <button className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors">Configure</button>
+                <div className="pt-4 border-t border-zinc-900 flex justify-end">
+                  <button 
+                    onClick={() => {
+                      setTerminal(prev => prev + "\n[System]: Neural API Keys synchronized to local storage.");
+                      alert("API Keys saved successfully.");
+                    }}
+                    className="px-8 py-3 bg-orange-500 text-black font-black rounded-xl uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
+                  >
+                    Save & Sync Keys
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
-                <div className="flex items-center gap-4">
-                  <Database className="w-5 h-5 text-[#3ecf8e]" />
-                  <div>
-                    <p className="text-[11px] font-bold text-white">Supabase Database</p>
-                    <p className="text-[9px] text-zinc-600">Manage your persistent data.</p>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">External Connections</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <Github className="w-5 h-5 text-white" />
+                    <div>
+                      <p className="text-[11px] font-bold text-white">GitHub Repository</p>
+                      <p className="text-[9px] text-zinc-600">Sync your code to the cloud.</p>
+                    </div>
                   </div>
+                  <button 
+                    onClick={() => setShowApiVault(true)}
+                    className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Configure
+                  </button>
                 </div>
-                <button className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors">Configure</button>
+                <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <Database className="w-5 h-5 text-[#3ecf8e]" />
+                    <div>
+                      <p className="text-[11px] font-bold text-white">Supabase Database</p>
+                      <p className="text-[9px] text-zinc-600">Manage your persistent data.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowApiVault(true)}
+                    className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Configure
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -546,6 +1211,14 @@ function App() {
                 <p className="text-[11px] font-bold text-white">Post for Sale</p>
                 <p className="text-[9px] text-zinc-600">List your app on the marketplace.</p>
               </button>
+              <button 
+                onClick={() => setIsLoggedIn(false)}
+                className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-red-500/20 transition-all group"
+              >
+                <LogOut className="w-5 h-5 text-zinc-600 group-hover:text-red-500" />
+                <p className="text-[11px] font-bold text-white">Terminate Session</p>
+                <p className="text-[9px] text-zinc-600">Securely logout from V12 Command.</p>
+              </button>
             </div>
           </section>
         )}
@@ -553,12 +1226,403 @@ function App() {
     </div>
   );
 
+  const renderPricingView = () => (
+    <div className="flex-1 flex flex-col bg-[#010101] p-8 overflow-y-auto custom-scrollbar">
+      <div className="max-w-5xl mx-auto w-full space-y-12 pb-32">
+        <div className="space-y-4 text-center">
+          <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">The Elite Matrix</h2>
+          <p className="text-zinc-500 text-lg font-medium">Scale your neural operations with V12 performance.</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          {TIERS.map((tier, i) => (
+            <TierCard key={i} tier={tier} />
+          ))}
+        </div>
+
+        <div className="p-8 bg-[#080808] border border-zinc-800 rounded-3xl space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">Enterprise Protocol</p>
+              <p className="text-white font-bold">Custom Neural Architectures</p>
+            </div>
+            <button className="px-6 py-2 border border-zinc-800 rounded-xl text-[10px] font-black uppercase text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all">
+              Contact Sales
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-zinc-900">
+            {[
+              { label: 'SLA Guarantee', value: '99.99%' },
+              { label: 'Response Time', value: '< 50ms' },
+              { label: 'Support', value: '24/7 Elite' }
+            ].map((item, i) => (
+              <div key={i} className="space-y-1">
+                <p className="text-[8px] text-zinc-700 font-black uppercase tracking-widest">{item.label}</p>
+                <p className="text-white font-bold text-xs">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAiFeaturesModal = () => {
+    if (!showAiFeatures) return null;
+
+    const features = [
+      {
+        icon: <Music className="w-5 h-5 text-blue-400" />,
+        title: "Generate music",
+        description: "Add AI music generation to your app. Let users create custom soundtracks, jingles, or background music from text prompts or images using Lyria."
+      },
+      {
+        icon: <ShieldCheck className="w-5 h-5 text-blue-400" />,
+        title: "Add database and auth",
+        description: "Add persistence to your app and keep track of user data with Firestore. Use Google Sign-In with Firebase Auth to securely identify users."
+      },
+      {
+        icon: <ImagePlus className="w-5 h-5 text-blue-400" />,
+        title: "Create & edit images",
+        description: "Create and edit images from text prompts, optimized for speed and high-volume use cases."
+      },
+      {
+        icon: <Volume2 className="w-5 h-5 text-blue-400" />,
+        title: "Add voice conversations",
+        description: "Use the Gemini Live API to give your app a voice and make your own conversational experiences."
+      },
+      {
+        icon: <Video className="w-5 h-5 text-blue-400" />,
+        title: "Animate images into video",
+        description: "Bring images to life with Veo 3. Let users upload a product photo and turn it into a dynamic video ad, or animate a character's portrait."
+      },
+      {
+        icon: <Globe className="w-5 h-5 text-blue-400" />,
+        title: "Use Google Search data",
+        description: "Connect your app to real-time Google Search results. Build an agent that can discuss current events, cite recent news, or fact-check information."
+      },
+      {
+        icon: <MapPin className="w-5 h-5 text-blue-400" />,
+        title: "Use Google Maps data",
+        description: "Connect your app to real-time Google Maps data. Build an agent that can pull information about places, routes, or directions."
+      },
+      {
+        icon: <Sparkles className="w-5 h-5 text-blue-400" />,
+        title: "Generate high-quality images",
+        description: "Generate high-quality images from a text prompt. Create blog post heroes, concept art, or unique assets in your application."
+      }
+    ];
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-end p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="w-full max-w-md h-full bg-[#0a0a0a] border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-right-8 duration-500">
+          <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
+            <h2 className="text-lg font-black text-white uppercase tracking-tight">Add AI features</h2>
+            <button 
+              onClick={() => setShowAiFeatures(false)}
+              className="p-2 hover:bg-zinc-900 rounded-full transition-colors text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            <div className="grid grid-cols-1 gap-4">
+              {features.map((f, i) => (
+                <div key={i} className="p-5 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl group hover:border-blue-500/30 hover:bg-zinc-900/50 transition-all cursor-pointer">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-zinc-900 rounded-xl border border-zinc-800 group-hover:border-blue-500/20 transition-all">
+                      {f.icon}
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">{f.title}</h3>
+                      <p className="text-[11px] text-zinc-500 leading-relaxed font-medium">{f.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderContactModal = () => {
+    if (!showContact) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      alert(`Message sent to mycanvas@utubemail.com from ${contactForm.email}`);
+      setShowContact(false);
+      setContactForm({ name: '', email: '', message: '' });
+    };
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="w-full max-w-md bg-[#0a0a0a] border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="p-6 border-b border-zinc-900 flex items-center justify-between bg-zinc-900/20">
+            <h2 className="text-lg font-black text-white uppercase tracking-tight">Direct Dispatch</h2>
+            <button 
+              onClick={() => setShowContact(false)}
+              className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div className="space-y-2">
+              <label className="text-[9px] text-zinc-500 uppercase font-black">Your Name</label>
+              <input 
+                type="text" 
+                value={contactForm.name}
+                onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                placeholder="Architect Name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] text-zinc-500 uppercase font-black">Return Email</label>
+              <input 
+                type="email" 
+                value={contactForm.email}
+                onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                placeholder="email@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] text-zinc-500 uppercase font-black">Mission Brief</label>
+              <textarea 
+                value={contactForm.message}
+                onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 h-32 resize-none"
+                placeholder="Describe your request..."
+                required
+              />
+            </div>
+            <button 
+              type="submit"
+              className="w-full py-4 bg-[#ea580c] text-black font-black rounded-xl uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Send Dispatch
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  if (!isLoggedIn) {
+    if (showLanding) {
+      return <LandingPage onEnter={() => setShowLanding(false)} />;
+    }
+    return (
+      <div className="min-h-screen bg-[#020202] flex items-center justify-center p-6 font-mono">
+        <div className="w-full max-w-md bg-[#080808] border border-orange-500/20 rounded-3xl p-10 space-y-8 backdrop-blur-xl shadow-2xl">
+          {authView === 'LOGIN' && (
+            <>
+              <div className="text-center space-y-2">
+                <h1 className="text-orange-500 text-3xl font-black tracking-tighter uppercase">V12 Access</h1>
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Neural Command Bridge Login</p>
+              </div>
+
+              <div className="flex gap-2 p-1 bg-black/40 border border-zinc-800 rounded-xl">
+                <button 
+                  onClick={() => setLoginMode('ADMIN')}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${loginMode === 'ADMIN' ? 'bg-orange-500 text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  Admin
+                </button>
+                <button 
+                  onClick={() => setLoginMode('MEMBER')}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${loginMode === 'MEMBER' ? 'bg-orange-500 text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  Member
+                </button>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] text-zinc-500 uppercase font-black">{loginMode === 'ADMIN' ? 'Architect Email' : 'Member Email'}</label>
+                  <input 
+                    type="email" 
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                    placeholder="mycanvas@utubemail.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[9px] text-zinc-500 uppercase font-black">Access Key</label>
+                    <button 
+                      type="button"
+                      onClick={() => setAuthView('FORGOT')}
+                      className="text-[9px] text-orange-500/60 hover:text-orange-500 uppercase font-black transition-colors"
+                    >
+                      Forgot?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 pr-12"
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <button 
+                    type="submit"
+                    className="w-full py-4 bg-[#ea580c] text-black font-black rounded-xl uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    Enter The Lab
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowLanding(true)}
+                    className="w-full py-2 text-[9px] text-zinc-600 hover:text-zinc-400 uppercase font-black transition-colors"
+                  >
+                    ← Back to Landing
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+
+          {authView === 'FORGOT' && (
+            <div className="space-y-8">
+              <div className="text-center space-y-2">
+                <h1 className="text-orange-500 text-3xl font-black tracking-tighter uppercase">Neural Recovery</h1>
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Initiate Password Reset Protocol</p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] text-zinc-500 uppercase font-black">Registered Email</label>
+                  <input 
+                    type="email" 
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                    placeholder="architect@v12.com"
+                    required
+                  />
+                </div>
+                <button 
+                  onClick={() => {
+                    if (resetEmail) {
+                      setAuthView('RESET');
+                      setTerminal(prev => prev + `\n[System]: Recovery link dispatched to ${resetEmail}.`);
+                    }
+                  }}
+                  className="w-full py-4 bg-[#ea580c] text-black font-black rounded-xl uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  Send Recovery Link
+                </button>
+                <button 
+                  onClick={() => setAuthView('LOGIN')}
+                  className="w-full text-[10px] text-zinc-600 hover:text-zinc-400 uppercase font-black transition-colors"
+                >
+                  Back to Command Center
+                </button>
+              </div>
+            </div>
+          )}
+
+          {authView === 'RESET' && (
+            <div className="space-y-8">
+              <div className="text-center space-y-2">
+                <h1 className="text-orange-500 text-3xl font-black tracking-tighter uppercase">Reset Key</h1>
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">Update Neural Access Credentials</p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] text-zinc-500 uppercase font-black">New Access Key</label>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 pr-12"
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (newPassword) {
+                      setAuthView('LOGIN');
+                      setTerminal(prev => prev + `\n[System]: Neural Access Key updated successfully.`);
+                      alert("Password reset successful. Please login with your new credentials.");
+                    }
+                  }}
+                  className="w-full py-4 bg-[#ea580c] text-black font-black rounded-xl uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  Confirm New Key
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center">
+            <p className="text-[8px] text-zinc-800 uppercase font-bold tracking-tighter">Authorized Personnel Only // Noble Stable Protocol</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen bg-[#020202] text-white font-mono overflow-hidden text-[13px]">
+      {renderAiFeaturesModal()}
+      {renderContactModal()}
       
+      {/* HAMBURGER MENU: Only visible on desktop to toggle sidebar */}
+      <button 
+        onClick={() => setShowSidebar(!showSidebar)}
+        className="hidden lg:flex fixed top-6 left-6 z-50 p-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-xl text-orange-500 hover:border-orange-500/50 transition-all"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* SIDEBAR: The Command Center */}
-      <div className="w-[420px] border-r border-[#181818] p-6 flex flex-col bg-[#050505] z-30">
-        <h1 className="text-[#ea580c] text-2xl font-black mb-8 flex items-center gap-3">💎 MYCANVASLAB</h1>
+      <div className={`hidden lg:flex flex-col border-r border-[#181818] p-6 bg-[#050505] z-30 transition-all duration-300 ${showSidebar ? 'w-[420px]' : 'w-0 p-0 border-none overflow-hidden'}`}>
+        <h1 className="text-[#ea580c] text-2xl font-black mb-8 flex items-center gap-3 whitespace-nowrap">💎 MYCANVASLAB</h1>
+
+        {/* THE LOW FUEL WARNING BANNER */}
+        {credits < 500 && (
+          <div className="bg-orange-600/20 border-y border-orange-500/50 p-3 mb-6 flex justify-between items-center animate-pulse">
+            <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">
+              ⚠️ NEURAL FUEL CRITICAL: {credits} CREDITS REMAINING
+            </span>
+            <button className="bg-orange-500 text-black px-4 py-1 rounded-full text-[9px] font-black">
+              REFUEL NOW
+            </button>
+          </div>
+        )}
         
         {/* SCROLLABLE SECTION */}
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
@@ -587,69 +1651,141 @@ function App() {
               <span className="text-[10px] text-zinc-500 font-bold uppercase">Asset Vault</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-               <button className="p-3 bg-black/40 border border-zinc-800 rounded-lg text-[9px] hover:border-orange-500 transition-all text-zinc-400">MY_AGENTS</button>
+               <button 
+                 onClick={() => setView('FILES')}
+                 className="p-3 bg-black/40 border border-zinc-800 rounded-lg text-[9px] hover:border-orange-500 transition-all text-zinc-400"
+               >
+                 MY_AGENTS
+               </button>
                <button className="p-3 bg-black/40 border border-zinc-800 rounded-lg text-[9px] hover:border-orange-500 transition-all text-zinc-400">PRIVATE_LIBS</button>
             </div>
           </div>
 
-          <div className="p-4 border border-orange-500/20 bg-orange-500/5 rounded-xl text-orange-500 text-[11px] font-bold flex items-center justify-between">
-            <span>⚡ SCRIPT ARCHITECT</span>
-            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+          <SidebarButton 
+            label="Script Architect"
+            icon="⚡"
+            isActive={view === 'CREATOR'}
+            onClick={() => setView('CREATOR')}
+          />
+
+          <SidebarButton 
+            label="Marketing Hub"
+            icon="📢"
+            isActive={view === 'MARKETING'}
+            onClick={() => setView('MARKETING')}
+          />
+
+          <SidebarButton 
+            label="Elite Matrix"
+            icon="💎"
+            isActive={view === 'PRICING'}
+            onClick={() => setView('PRICING')}
+          />
+
+          <SidebarButton 
+            label="Vault Guardian"
+            icon="⚖️"
+            isActive={view === 'SETTINGS'}
+            onClick={() => setView('SETTINGS')}
+          />
+
+          <div className="pt-4 border-t border-zinc-800 flex flex-col gap-3">
+            <button 
+              onClick={() => setShowContact(true)}
+              className="text-[10px] font-black text-zinc-600 hover:text-orange-500 transition-colors uppercase tracking-widest text-left"
+            >
+              Contact
+            </button>
+            <button 
+              onClick={() => setShowAiFeatures(true)}
+              className="text-[10px] font-black text-zinc-600 hover:text-orange-500 transition-colors uppercase tracking-widest text-left"
+            >
+              AI Features
+            </button>
+
+            {/* THE DROPDOWN SELECTOR */}
+            <div className="relative group mt-4">
+              <div className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center cursor-pointer group-hover:border-orange-500/30 transition-all">
+                <span className="text-zinc-400 text-[11px] font-bold uppercase">{credits} credits / month</span>
+                <span className="text-zinc-600 group-hover:text-orange-500">▼</span>
+              </div>
+              
+              {/* HIDDEN OPTIONS MENU */}
+              <div className="absolute top-full left-0 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl hidden group-hover:block z-50 overflow-hidden shadow-2xl">
+                {creditOptions.map((opt) => (
+                  <button key={opt.label} className="w-full p-4 text-left text-[10px] font-bold text-zinc-500 hover:bg-orange-500/10 hover:text-orange-500 border-b border-zinc-800 last:border-0 transition-all">
+                    {opt.label} — <span className="text-white">{opt.price}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="p-4 border border-zinc-800 bg-zinc-900/10 rounded-xl text-zinc-600 text-[11px] font-bold">⚖️ VAULT GUARDIAN</div>
           
           {/* API VAULT SECTION */}
-          <div className={`border transition-all duration-300 rounded-xl overflow-hidden ${showApiVault ? 'border-orange-500/40 bg-orange-500/5' : 'border-zinc-800 bg-zinc-900/10'}`}>
+          <div className={`border transition-all duration-300 rounded-2xl overflow-hidden ${showApiVault ? 'border-orange-500/40 bg-orange-500/5' : 'border-zinc-800 bg-zinc-900/10'}`}>
             <button 
               onClick={() => setShowApiVault(!showApiVault)}
-              className="w-full p-4 flex items-center justify-between text-[11px] font-bold text-zinc-400 hover:text-white transition-colors"
+              className="w-full p-5 flex items-center justify-between text-[11px] font-bold text-zinc-400 hover:text-white transition-colors"
             >
               <div className="flex items-center gap-2">
                 <Key className={`w-3.5 h-3.5 ${showApiVault ? 'text-orange-500' : 'text-zinc-600'}`} />
-                <span>NEURAL API VAULT</span>
+                <span className="tracking-widest uppercase">NEURAL API VAULT</span>
               </div>
-              <div className={`w-1.5 h-1.5 rounded-full ${apiKeys.gemini && apiKeys.chatgpt && apiKeys.agent ? 'bg-green-500' : 'bg-zinc-700'}`}></div>
+              <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor] ${apiKeys.gemini && apiKeys.chatgpt && apiKeys.agent ? 'bg-green-500 text-green-500' : 'bg-zinc-700 text-zinc-700'}`}></div>
             </button>
             
             {showApiVault && (
-              <div className="px-4 pb-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="space-y-1">
-                  <label className="text-[9px] text-zinc-600 uppercase font-black">Gemini Key</label>
+              <div className="px-5 pb-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Gemini Key</label>
                   <div className="relative">
                     <input 
                       type="password"
                       value={apiKeys.gemini}
                       onChange={(e) => handleKeyChange('gemini', e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-3 py-2 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
                       placeholder="Paste Gemini API Key..."
                     />
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
+                    <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] text-zinc-600 uppercase font-black">ChatGPT Key</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">ChatGPT Key</label>
                   <div className="relative">
                     <input 
                       type="password"
                       value={apiKeys.chatgpt}
                       onChange={(e) => handleKeyChange('chatgpt', e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-3 py-2 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
                       placeholder="Paste OpenAI API Key..."
                     />
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
+                    <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] text-zinc-600 uppercase font-black">Agent Key</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] text-orange-500/80 uppercase font-black tracking-widest">Agent Key (Neural Core)</label>
                   <div className="relative">
                     <input 
                       type="password"
                       value={apiKeys.agent}
                       onChange={(e) => handleKeyChange('agent', e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-3 py-2 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                      className="w-full bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-200"
                       placeholder="Paste Agent API Key..."
                     />
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
+                    <Zap className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-500/50" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Kimi Key</label>
+                  <div className="relative">
+                    <input 
+                      type="password"
+                      value={apiKeys.kimi}
+                      onChange={(e) => handleKeyChange('kimi', e.target.value)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                      placeholder="Paste Kimi API Key..."
+                    />
+                    <Cpu className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
                   </div>
                 </div>
               </div>
@@ -658,28 +1794,37 @@ function App() {
         </div>
 
           {/* TEASER FOR AGENT BUILDER */}
-          <div className="p-4 border border-dashed border-zinc-900 bg-zinc-900/5 rounded-xl group hover:border-zinc-800 transition-colors cursor-not-allowed">
-             <div className="flex items-center justify-between mb-2">
-               <span className="text-[8px] text-zinc-700 font-black uppercase tracking-[0.2em]">Coming Soon</span>
-               <div className="w-1 h-1 rounded-full bg-zinc-800"></div>
+          <div className="p-5 border border-dashed border-zinc-800 bg-zinc-900/10 rounded-2xl group hover:border-orange-500/30 transition-all cursor-not-allowed mt-4">
+             <div className="flex items-center justify-between mb-3">
+               <span className="text-[8px] text-zinc-500 font-black uppercase tracking-[0.3em]">Coming Soon</span>
+               <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-orange-500/50 transition-colors"></div>
              </div>
-             <p className="text-[11px] text-zinc-600 font-bold uppercase tracking-tight group-hover:text-zinc-500 transition-colors">Build Your Own Agent</p>
-             <p className="text-[9px] text-zinc-800 mt-1 font-medium">Custom neural workflows for automated execution.</p>
+             <p className="text-[11px] text-zinc-400 font-black uppercase tracking-widest group-hover:text-white transition-colors">Build Your Own Agent</p>
+             <p className="text-[9px] text-zinc-600 mt-2 font-medium leading-relaxed">Custom neural workflows for automated execution.</p>
           </div>
         </div>
 
         {/* Input Dock (Sticky at bottom) */}
-        <div className="bg-[#080808] p-4 rounded-2xl border border-[#181818] mt-4">
+        <div className="bg-[#080808] p-5 rounded-3xl border border-[#181818] mt-4 space-y-4">
           {/* AI Feature Chips from Image */}
-          <div className="flex gap-2 mb-4 overflow-x-auto custom-scrollbar pb-2 no-scrollbar">
-            <button className="px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-bold text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center gap-1.5 whitespace-nowrap">
-              <Zap className="w-2.5 h-2.5 text-orange-500" />
+          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 no-scrollbar">
+            <button 
+              onClick={() => setShowAiFeatures(true)}
+              className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <Zap className="w-3 h-3 text-orange-500" />
               AI Features
             </button>
-            <button className="px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-bold text-zinc-400 hover:text-white hover:border-zinc-700 transition-all whitespace-nowrap">
+            <button 
+              onClick={() => setTerminal(prev => prev + "\n[System]: Agent Builder UI initialization protocol engaged. Coming soon.")}
+              className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all whitespace-nowrap"
+            >
               Implement Agent Builder UI
             </button>
-            <button className="px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-bold text-zinc-400 hover:text-white hover:border-zinc-700 transition-all whitespace-nowrap">
+            <button 
+              onClick={() => setShowApiVault(true)}
+              className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all whitespace-nowrap"
+            >
               Enhance API Key...
             </button>
           </div>
@@ -688,9 +1833,17 @@ function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); executeMission(); }}}
-            className="w-full h-24 bg-transparent text-sm outline-none resize-none placeholder-zinc-800 text-zinc-300" 
+            className="w-full h-24 bg-transparent text-sm outline-none resize-none placeholder-zinc-800 text-zinc-300 font-medium" 
             placeholder="Make changes, add new features, ask for anything" 
           />
+
+          {/* PROGRESS BAR FROM IMAGE */}
+          <div className="space-y-2">
+            <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+              <div className="w-[80%] h-full bg-orange-500 shadow-[0_0_10px_#ea580c]" />
+            </div>
+          </div>
+
           <div className="flex items-center justify-between border-t border-[#181818] pt-4">
              <div className="flex gap-3 items-center">
                 <button className="text-zinc-700 hover:text-zinc-400 transition-colors">
@@ -727,6 +1880,8 @@ function App() {
 
       {/* THE CANVAS / MAIN VIEW */}
       {view === 'CREATOR' && renderCreatorView()}
+      {view === 'MARKETING' && renderMarketingView()}
+      {view === 'PRICING' && renderPricingView()}
       {view === 'HOME' && renderHomeView()}
       {view === 'STATS' && renderStatsView()}
       {view === 'FILES' && renderFilesView()}
@@ -751,6 +1906,18 @@ function App() {
           className={`w-12 h-12 border rounded-2xl flex items-center justify-center transition-all duration-300 group ${view === 'CREATOR' ? 'border-orange-500/60 bg-orange-500/10 shadow-[0_0_20px_rgba(234,88,12,0.2)]' : 'border-orange-500/30 bg-orange-500/5 shadow-[0_0_20px_rgba(234,88,12,0.1)] hover:border-orange-500/60'}`}
         >
            <Wrench className={`w-6 h-6 group-hover:scale-110 transition-transform ${view === 'CREATOR' ? 'text-orange-500' : 'text-orange-500'}`} strokeWidth={2} />
+        </button>
+        <button 
+          onClick={() => setView('MARKETING')}
+          className={`transition-all duration-300 ${view === 'MARKETING' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
+        >
+          <Megaphone className="w-5 h-5" strokeWidth={1.5} />
+        </button>
+        <button 
+          onClick={() => setView('PRICING')}
+          className={`transition-all duration-300 ${view === 'PRICING' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
+        >
+          <DollarSign className="w-5 h-5" strokeWidth={1.5} />
         </button>
         <button 
           onClick={() => setView('FILES')}

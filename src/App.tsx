@@ -6,7 +6,8 @@ import {
   Key, Lock, Home, BarChart3, Download, Share2, 
   Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff, Mail,
   Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
-  Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon
+  Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon,
+  FileText
 } from "lucide-react";
 
 // STYLES: Tactical Glassmorphism
@@ -256,7 +257,7 @@ function App() {
   const [creatorSubTab, setCreatorSubTab] = useState<'MISSION CONTROL' | 'PUBLISH / BASH'>('MISSION CONTROL');
   const [statsSubTab, setStatsSubTab] = useState<'METRICS' | 'WALL'>('METRICS');
   const [filesSubTab, setFilesSubTab] = useState<'FOLDERS' | 'TRANSFER'>('FOLDERS');
-  const [settingsSubTab, setSettingsSubTab] = useState<'General' | 'Neural' | 'Security' | 'Data' | 'Billing' | 'Legal'>('General');
+  const [settingsSubTab, setSettingsSubTab] = useState<'General' | 'Neural' | 'Security' | 'Data' | 'Billing' | 'Legal' | 'Terms'>('General');
   const [isPublic, setIsPublic] = useState(false); // Default: Private
   const [isConnected, setIsConnected] = useState({ github: false, supabase: false });
   const [model, setModel] = useState<'GEMINI' | 'CHATGPT'>('GEMINI'); 
@@ -426,21 +427,23 @@ function App() {
     localStorage.setItem(`MYCANVAS_${provider.toUpperCase()}_KEY`, value);
   };
 
-  const executeMission = async () => {
+  // THE V12 DUAL-CORE SWITCHBOARD
+  const executeMission = async (provider = model) => {
     if (!input.trim() || isLoading) return;
     
+    // 1. Pull the Key from the V12 Vault (.env) or User Vault
+    const apiKey = provider === 'GEMINI' 
+      ? (import.meta.env.VITE_GEMINI_API_KEY || apiKeys.gemini)
+      : (import.meta.env.VITE_OPENAI_API_KEY || apiKeys.chatgpt);
+
     setIsLoading(true);
-    setTerminal(prev => prev + `\n\n[System]: Routing via ${model} Core...`);
+    setTerminal(prev => prev + `\n\n[System]: ROUTING_VIA_${provider}_CORE...`);
     
     try {
-      if (model === 'GEMINI') {
-        const key = apiKeys.gemini || process.env.GEMINI_API_KEY || "";
-        if (!key) {
-          setTerminal(prev => prev + `\n\n[System]: Error - Gemini Key missing in Vault.`);
-          setIsLoading(false);
-          return;
-        }
-        const ai = new GoogleGenAI({ apiKey: key });
+      if (provider === 'GEMINI') {
+        if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
+        
+        const ai = new GoogleGenAI({ apiKey });
         const parts: any[] = [{ text: input }];
         if (attachment) {
           parts.push({
@@ -458,22 +461,20 @@ function App() {
             systemInstruction: "You are the MyCanvasLab AI Commander. Your mission is to assist the Architect in building high-performance, income-generating web applications. You are technical, noble, and direct. You value the 'V12' power of the Hetzner mainframe. You do not make excuses; you provide solutions. You speak with the confidence of a Diamond."
           }
         });
-        
+
         if (response.text) {
-          setTerminal(prev => prev + `\n\n[${model}]: ${response.text}`);
+          setTerminal(prev => prev + `\n\n[${provider}]: ${response.text}`);
+          setTerminal(prev => prev + `\n\n[System]: ${provider}_MISSION_SUCCESS.`);
           setAttachment(null);
           setInput("");
         } else {
-          setTerminal(prev => prev + `\n\n[System]: API Response empty. Check billing/quota.`);
+          throw new Error("EMPTY_RESPONSE");
         }
       } else {
-        const key = apiKeys.chatgpt;
-        if (!key) {
-          setTerminal(prev => prev + `\n\n[System]: ChatGPT Neural Link requires API Key in Vault.`);
-          setIsLoading(false);
-          return;
-        }
-        
+        // OPENAI / CHATGPT Core
+        if (!apiKey) throw new Error("OPENAI_KEY_MISSING");
+
+        // We use the V12 Proxy for OpenAI to bypass CORS and secure the key
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -481,23 +482,24 @@ function App() {
             provider: 'openai',
             model: 'gpt-4o',
             prompt: input,
-            history: [],
             systemInstruction: "You are the MyCanvasLab AI Commander. Your mission is to assist the Architect in building high-performance, income-generating web applications. You are technical, noble, and direct. You value the 'V12' power of the Hetzner mainframe. You do not make excuses; you provide solutions. You speak with the confidence of a Diamond.",
-            userApiKey: key
+            userApiKey: apiKey
           })
         });
 
         const data = await res.json();
         if (data.text) {
-          setTerminal(prev => prev + `\n\n[${model}]: ${data.text}`);
+          setTerminal(prev => prev + `\n\n[${provider}]: ${data.text}`);
+          setTerminal(prev => prev + `\n\n[System]: ${provider}_MISSION_SUCCESS.`);
+          setInput("");
         } else {
-          setTerminal(prev => prev + `\n\n[System]: Error - ${data.error || 'Mission Failed'}`);
+          throw new Error(data.error || "MISSION_FAILED");
         }
       }
       setInput(''); // Clear after send
       setTimeout(scrollToBottom, 100);
-    } catch (err) {
-      setTerminal(prev => prev + `\n\n[System]: Error - ${model} link severed. Check Hetzner .env.`);
+    } catch (error: any) {
+      setTerminal(prev => prev + `\n\n[System]: Error - ${error.message}. Check Hetzner .env.`);
     } finally {
       setIsLoading(false);
     }
@@ -1559,7 +1561,8 @@ function App() {
       { id: 'Security', icon: '🛡️', label: 'SECURITY_VAULT' },
       { id: 'Data', icon: '💾', label: 'DATA_CONTROLS' },
       { id: 'Billing', icon: '💳', label: 'SUBSCRIPTION' },
-      { id: 'Legal', icon: '⚖️', label: 'LEGAL_SHIELD' }
+      { id: 'Legal', icon: '⚖️', label: 'LEGAL_SHIELD' },
+      { id: 'Terms', icon: '📜', label: 'TERMS_OF_SERVICE' }
     ];
 
     return (
@@ -1836,6 +1839,53 @@ function App() {
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsSubTab === 'Terms' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-700">
+                  <section className="space-y-6">
+                    <h3 className="text-orange-500 font-black text-[12px] mb-4 uppercase tracking-[0.2em]">V12_COMMAND_CENTER_TERMS</h3>
+                    <div className="p-8 bg-zinc-900/20 border border-zinc-800 rounded-[40px] space-y-8">
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest">01_SERVICE_PROVISION</h4>
+                        <p className="text-zinc-500 text-[10px] leading-relaxed uppercase font-bold">
+                          MYCANVASLAB PROVIDES A HIGH-PERFORMANCE NEURAL INTERFACE FOR AI AGENT ARCHITECTURE AND DEPLOYMENT. BY ACCESSING THE V12 MAINFRAME, YOU AGREE TO OPERATE WITHIN THE BOUNDS OF ETHICAL AI PROTOCOLS AND SOVEREIGN DATA OWNERSHIP.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest">02_INTELLECTUAL_PROPERTY</h4>
+                        <p className="text-zinc-500 text-[10px] leading-relaxed uppercase font-bold">
+                          ALL CODE, ASSETS, AND NEURAL WEIGHTS GENERATED WITHIN YOUR PRIVATE LAB REMAIN YOUR EXCLUSIVE PROPERTY. MYCANVASLAB RETAINS OWNERSHIP OF THE UNDERLYING V12 ARCHITECTURE AND PROPRIETARY INTERFACE TOOLS.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest">03_LIABILITY_LIMITATION</h4>
+                        <p className="text-zinc-500 text-[10px] leading-relaxed uppercase font-bold">
+                          THE ARCHITECT ASSUMES ALL RESPONSIBILITY FOR THE ACTIONS AND OUTPUTS OF THEIR DEPLOYED AGENTS. MYCANVASLAB IS NOT LIABLE FOR ANY NEURAL DRIFT, DATA LOSS, OR EXTERNAL SYSTEM DISRUPTION CAUSED BY AGENT OPERATIONS.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="flex flex-col gap-4">
+                    <button className="w-full p-6 bg-orange-500/10 border border-orange-500/20 rounded-3xl flex items-center justify-between group hover:bg-orange-500/20 transition-all">
+                      <div className="flex items-center gap-4">
+                        <FileText className="w-6 h-6 text-orange-500" />
+                        <div className="text-left">
+                          <p className="text-[11px] font-black text-white uppercase tracking-widest">DOWNLOAD_FULL_TERMS.PDF</p>
+                          <p className="text-[9px] text-zinc-600 uppercase">OFFICIAL_V12_LEGAL_DOCUMENTATION</p>
+                        </div>
+                      </div>
+                      <Download className="w-5 h-5 text-orange-500 group-hover:translate-y-1 transition-transform" />
+                    </button>
+                    
+                    <p className="text-[8px] text-zinc-700 text-center uppercase tracking-widest font-black">
+                      LAST_REVISION_PROTOCOL: 2026-03-30 // HETZNER_SECURE_NODE_VERIFIED
+                    </p>
                   </div>
                 </div>
               )}
@@ -2539,7 +2589,7 @@ function App() {
                 </div>
              </div>
              <button 
-               onClick={executeMission}
+               onClick={() => executeMission()}
                disabled={isLoading || !input.trim()}
                className="w-10 h-10 bg-[#ea580c] rounded-full flex items-center justify-center shadow-[0_0_15px_#ea580c66] hover:scale-110 active:scale-95 transition-all disabled:opacity-50">
                <ArrowUp className="text-black w-5 h-5" strokeWidth={3} />

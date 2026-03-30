@@ -55,9 +55,9 @@ const PLATFORMS = [
 
 // THE ELITE TIER MATRIX
 const TIERS = [
-  { name: 'STARTUP ELITE', price: '$49', perks: '5 Agents / 1GB Neural Storage', color: 'zinc' },
-  { name: 'BUSINESS ELITE', price: '$99', perks: '20 Agents / 10GB Neural Storage', color: 'orange' },
-  { name: 'GURU ELITE', price: '$299', perks: 'Unlimited Agents / Private Hetzner Core', color: 'orange' }
+  { name: 'STARTUP ELITE', price: '$49', perks: '5 Agents / 1GB Neural Storage', color: 'zinc', link: 'https://buy.stripe.com/dRmfZjetC3TdbEs9S12wU01' },
+  { name: 'BUSINESS ELITE', price: '$99', perks: '20 Agents / 10GB Neural Storage', color: 'orange', link: 'https://buy.stripe.com/dRm4gB4T2fBV0ZOc092wU02' },
+  { name: 'GURU ELITE', price: '$299', perks: 'Unlimited Agents / Private Hetzner Core', color: 'orange', link: 'https://buy.stripe.com/cNi5kF0CMcpJ6k8ggp2wU00' }
 ];
 
 const TierCard = ({ tier }: { tier: typeof TIERS[0] }) => (
@@ -65,7 +65,10 @@ const TierCard = ({ tier }: { tier: typeof TIERS[0] }) => (
     <h4 className="text-[10px] font-black tracking-widest text-zinc-500 mb-2 uppercase">{tier.name}</h4>
     <div className="text-3xl font-black mb-4 text-white">{tier.price}<span className="text-sm text-zinc-600">/mo</span></div>
     <p className="text-[9px] text-zinc-400 mb-6 leading-relaxed">{tier.perks}</p>
-    <button className="w-full py-3 rounded-xl bg-orange-500 text-black text-[10px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(234,88,12,0.2)]">
+    <button 
+      onClick={() => window.location.href = tier.link}
+      className="w-full py-3 rounded-xl bg-orange-500 text-black text-[10px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(234,88,12,0.2)]"
+    >
       ACTIVATE CORE
     </button>
   </div>
@@ -89,6 +92,16 @@ const MCL_Logo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
     </div>
   );
 };
+
+const PreviewLoading = () => (
+  <div className="w-full h-full bg-black/60 backdrop-blur-md flex flex-col items-center justify-center border border-orange-500/20 rounded-3xl">
+    <div className="w-16 h-16 border-t-2 border-orange-500 rounded-full animate-spin mb-6" />
+    <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.5em] animate-pulse">
+      SYNCING_NEURAL_PREVIEW...
+    </span>
+    <div className="mt-4 text-zinc-600 text-[8px] font-bold uppercase">Node: 46.62.209.177</div>
+  </div>
+);
 
 const RevenueManifesto = () => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 p-10 bg-orange-500/5 border border-orange-500/20 rounded-[40px] backdrop-blur-3xl animate-in fade-in zoom-in duration-1000 max-w-7xl w-full">
@@ -568,7 +581,12 @@ function App() {
         {creatorSubTab === 'MISSION CONTROL' ? (
           <div className="w-full h-full bg-[#050505] border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
              {activeTab === 'PREVIEW' ? (
-               <div className="flex-1 p-8 overflow-y-auto custom-scrollbar text-orange-500 whitespace-pre-wrap">
+               <div className="flex-1 p-8 overflow-y-auto custom-scrollbar text-orange-500 whitespace-pre-wrap relative">
+                 {isLoading && (
+                   <div className="absolute inset-0 z-10 p-4">
+                     <PreviewLoading />
+                   </div>
+                 )}
                  {terminal}
                  <div ref={terminalEndRef} />
                </div>
@@ -1514,10 +1532,14 @@ function App() {
 
   const renderSettingsView = () => {
     // THE MERCHANT CORE: ELITE BILLING
-    const handleSubscription = (tier: string) => {
-      setTerminal(prev => prev + `\n\n[System]: INITIATING_SECURE_PAYMENT: ${tier}_ELITE...`);
-      // Redirect to your Stripe / PayPal / Crypto link
-      window.location.href = `https://billing.mycanvaslab.com/checkout?plan=${tier}`;
+    const handleSubscription = (tierName: string) => {
+      setTerminal(prev => prev + `\n\n[System]: INITIATING_SECURE_PAYMENT: ${tierName}_ELITE...`);
+      const tier = TIERS.find(t => t.name.includes(tierName));
+      if (tier) {
+        window.location.href = tier.link;
+      } else {
+        window.location.href = `https://billing.mycanvaslab.com/checkout?plan=${tierName}`;
+      }
     };
 
     return (

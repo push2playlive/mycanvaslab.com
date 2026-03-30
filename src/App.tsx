@@ -78,7 +78,7 @@ const TierCard = ({ tier }: { tier: typeof TIERS[0] }) => (
 const MCL_Logo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
   const dimensions = 
     size === "sm" ? "w-6 h-6" : 
-    size === "lg" ? "w-32 h-32" : "w-10 h-10";
+    size === "lg" ? "w-24 h-24 md:w-32 md:h-32" : "w-10 h-10";
   
   return (
     <div className={`relative ${dimensions} flex items-center justify-center`}>
@@ -156,7 +156,7 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
         <div className="transition-transform duration-700 group-hover:scale-125 group-hover:rotate-[360deg]">
           <MCL_Logo size="lg" />
         </div>
-        <h1 className="mt-8 text-6xl font-black uppercase tracking-tighter">MYCANVASLAB</h1>
+        <h1 className="mt-8 text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tighter text-center px-4">MYCANVASLAB</h1>
         <div className="mt-4 px-6 py-1 border border-orange-500/20 rounded-full bg-orange-500/5">
           <span className="text-[10px] text-orange-500 font-black tracking-[0.4em] animate-pulse uppercase">Status: Noble_Stable</span>
         </div>
@@ -198,11 +198,21 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
         <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Access Command Nexus →</span>
       </button>
 
+      <footer className="mt-40 pb-10 w-full max-w-7xl px-10 border-t border-zinc-900 pt-10 flex justify-between items-center text-zinc-600 text-[8px] font-black uppercase tracking-widest">
+        <div className="flex gap-8">
+          <a href="/terms" className="hover:text-orange-500 transition-all">TERMS_OF_SERVICE</a>
+          <a href="/privacy" className="hover:text-orange-500 transition-all">PRIVACY_POLICY</a>
+          <a href="/cookies" className="hover:text-orange-500 transition-all">COOKIE_PROTOCOL</a>
+        </div>
+        <span>© 2026 MYCANVASLAB_V12_MAINFRAME</span>
+      </footer>
+
     </div>
   );
 };
 
 function App() {
+  const [userPlan, setUserPlan] = useState('GURU ELITE');
   const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL'>('CREATOR');
   const [galleryItems, setGalleryItems] = useState(MOCK_GALLERY);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -246,7 +256,7 @@ function App() {
   const [creatorSubTab, setCreatorSubTab] = useState<'MISSION CONTROL' | 'PUBLISH / BASH'>('MISSION CONTROL');
   const [statsSubTab, setStatsSubTab] = useState<'METRICS' | 'WALL'>('METRICS');
   const [filesSubTab, setFilesSubTab] = useState<'FOLDERS' | 'TRANSFER'>('FOLDERS');
-  const [settingsSubTab, setSettingsSubTab] = useState<'INTEGRATIONS' | 'CONFIG' | 'BILLING'>('INTEGRATIONS');
+  const [settingsSubTab, setSettingsSubTab] = useState<'General' | 'Neural' | 'Security' | 'Data' | 'Billing' | 'Legal'>('General');
   const [isPublic, setIsPublic] = useState(false); // Default: Private
   const [isConnected, setIsConnected] = useState({ github: false, supabase: false });
   const [model, setModel] = useState<'GEMINI' | 'CHATGPT'>('GEMINI'); 
@@ -1076,7 +1086,7 @@ function App() {
         <div className="grid grid-cols-2 gap-6">
           <div className="p-8 bg-[#050505] border border-zinc-900 rounded-3xl space-y-4 group hover:border-orange-500/20 transition-all cursor-pointer" onClick={() => setView('CREATOR')}>
             <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-orange-500" />
+              <Zap className="w-6 h-6 text-[#ff6900]" />
             </div>
             <h3 className="text-xl font-bold text-white">Enter The Lab</h3>
             <p className="text-zinc-600 text-sm">Execute missions and build high-performance neural scripts.</p>
@@ -1534,6 +1544,7 @@ function App() {
     // THE MERCHANT CORE: ELITE BILLING
     const handleSubscription = (tierName: string) => {
       setTerminal(prev => prev + `\n\n[System]: INITIATING_SECURE_PAYMENT: ${tierName}_ELITE...`);
+      setUserPlan(`${tierName} ELITE`);
       const tier = TIERS.find(t => t.name.includes(tierName));
       if (tier) {
         window.location.href = tier.link;
@@ -1542,191 +1553,294 @@ function App() {
       }
     };
 
+    const settingsTabs = [
+      { id: 'General', icon: '⚙️', label: 'GENERAL_SYSTEM' },
+      { id: 'Neural', icon: '🧠', label: 'PERSONALIZATION' },
+      { id: 'Security', icon: '🛡️', label: 'SECURITY_VAULT' },
+      { id: 'Data', icon: '💾', label: 'DATA_CONTROLS' },
+      { id: 'Billing', icon: '💳', label: 'SUBSCRIPTION' },
+      { id: 'Legal', icon: '⚖️', label: 'LEGAL_SHIELD' }
+    ];
+
     return (
-      <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
-        {/* TOP TABS */}
-        <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
-          <MCL_Logo size="sm" />
-          <div className="w-px h-4 bg-zinc-800 mx-2" />
-          {[
-            { id: 'INTEGRATIONS', label: 'Integrations' },
-            { id: 'CONFIG', label: 'App Config' },
-            { id: 'BILLING', label: 'Account / Billing' },
-            { id: 'LEGAL', label: 'Legal' }
-          ].map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setSettingsSubTab(tab.id as any)}
-              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-300 ${settingsSubTab === tab.id ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.2)]' : 'border-zinc-800 text-zinc-600 bg-zinc-900/10 hover:border-orange-500/40 hover:text-orange-400 hover:bg-orange-500/5'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-8 max-w-3xl mx-auto w-full space-y-12 pb-32">
-          {settingsSubTab === 'INTEGRATIONS' ? (
-            <section className="space-y-12">
-              <div className="space-y-6">
-                <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural API Vault</h3>
-                <div className="bg-[#050505] border border-zinc-900 rounded-2xl p-8 space-y-8">
-                  <div className="grid grid-cols-1 gap-6">
-                    {[
-                      { id: 'gemini', label: 'Gemini API Key', placeholder: 'Paste Gemini API Key...', icon: <Zap className="w-4 h-4 text-orange-500" /> },
-                      { id: 'chatgpt', label: 'OpenAI API Key', placeholder: 'Paste OpenAI API Key...', icon: <Key className="w-4 h-4 text-blue-500" /> },
-                      { id: 'kimi', label: 'Kimi API Key', placeholder: 'Paste Kimi API Key...', icon: <Cpu className="w-4 h-4 text-purple-500" /> }
-                    ].map((key) => (
-                      <div key={key.id} className={`space-y-2 p-4 rounded-2xl transition-all ${key.id === 'gemini' ? 'bg-orange-500/5 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.05)]' : ''}`}>
-                        <div className="flex items-center justify-between">
-                          <label className={`text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${key.id === 'gemini' ? 'text-orange-500' : 'text-zinc-500'}`}>
-                            {key.icon}
-                            {key.label}
-                          </label>
-                          {apiKeys[key.id as keyof typeof apiKeys] && (
-                            <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Active</span>
-                          )}
-                        </div>
-                        <div className="relative">
-                          <input 
-                            type="password"
-                            value={apiKeys[key.id as keyof typeof apiKeys]}
-                            onChange={(e) => handleKeyChange(key.id as any, e.target.value)}
-                            className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-sm outline-none transition-all text-zinc-300 pr-12 ${key.id === 'gemini' ? 'border-orange-500/30 focus:border-orange-500' : 'border-zinc-800 focus:border-orange-500/50'}`}
-                            placeholder={key.placeholder}
-                          />
-                          <Lock className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 ${key.id === 'gemini' ? 'text-orange-500/30' : 'text-zinc-700'}`} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pt-4 border-t border-zinc-900 flex justify-end">
-                    <button 
-                      onClick={() => {
-                        setTerminal(prev => prev + "\n[System]: Neural API Keys synchronized to local storage.");
-                        alert("API Keys saved successfully.");
-                      }}
-                      className="px-8 py-3 bg-orange-500 text-black font-black rounded-xl uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
-                    >
-                      Save & Sync Keys
-                    </button>
-                  </div>
-                </div>
+      <div className="flex-1 flex flex-col bg-[#010101] p-8 overflow-y-auto custom-scrollbar">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="flex h-[700px] w-full bg-black/40 border border-zinc-800 rounded-[40px] overflow-hidden backdrop-blur-3xl animate-in fade-in zoom-in duration-700 shadow-2xl">
+            {/* TACTICAL SIDEBAR */}
+            <div className="w-72 bg-zinc-900/40 border-r border-zinc-800 p-8 flex flex-col">
+              <div className="flex items-center gap-3 mb-10 px-4">
+                <MCL_Logo size="sm" />
+                <span className="text-[10px] font-black text-white tracking-[0.3em] uppercase">Architect_Hub</span>
+              </div>
+              
+              <div className="flex-1 space-y-2">
+                {settingsTabs.map(tab => (
+                  <button 
+                    key={tab.id}
+                    onClick={() => setSettingsSubTab(tab.id as any)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest ${
+                      settingsSubTab === tab.id ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.1)]' : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                    }`}
+                  >
+                    <span className="text-lg">{tab.icon}</span> {tab.label}
+                  </button>
+                ))}
               </div>
 
-              <div className="space-y-6">
-                <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">External Connections</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <Github className="w-5 h-5 text-white" />
-                      <div>
-                        <p className="text-[11px] font-bold text-white">GitHub Repository</p>
-                        <p className="text-[9px] text-zinc-600">Sync your code to the cloud.</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => setShowApiVault(true)}
-                      className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
-                    >
-                      Configure
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-[#050505] border border-zinc-900 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <Database className="w-5 h-5 text-[#3ecf8e]" />
-                      <div>
-                        <p className="text-[11px] font-bold text-white">Supabase Database</p>
-                        <p className="text-[9px] text-zinc-600">Manage your persistent data.</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => setShowApiVault(true)}
-                      className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors"
-                    >
-                      Configure
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          ) : settingsSubTab === 'CONFIG' ? (
-            <section className="space-y-6">
-              <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">App Management</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <button className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-orange-500/20 transition-all">
-                  <Shield className="w-5 h-5 text-orange-500" />
-                  <p className="text-[11px] font-bold text-white">Private Mode</p>
-                  <p className="text-[9px] text-zinc-600">Restrict access to your lab.</p>
-                </button>
-                <button 
-                  onClick={() => setIsForSale(!isForSale)}
-                  className={`p-6 border rounded-xl text-left space-y-2 transition-all ${isForSale ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_20px_rgba(234,88,12,0.1)]' : 'bg-[#050505] border-zinc-900 hover:border-orange-500/20'}`}
-                >
-                  <Zap className={`w-5 h-5 ${isForSale ? 'text-orange-500' : 'text-zinc-600'}`} />
-                  <p className="text-[11px] font-bold text-white">{isForSale ? 'Listed on Marketplace' : 'Post for Sale'}</p>
-                  <p className="text-[9px] text-zinc-600">{isForSale ? 'Click to unpublish from marketplace.' : 'List your app on the marketplace.'}</p>
-                </button>
+              <div className="pt-8 border-t border-zinc-800">
                 <button 
                   onClick={() => setIsLoggedIn(false)}
-                  className="p-6 bg-[#050505] border border-zinc-900 rounded-xl text-left space-y-2 hover:border-red-500/20 transition-all group"
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-500 hover:text-red-500 transition-all text-[10px] font-black uppercase tracking-widest"
                 >
-                  <LogOut className="w-5 h-5 text-zinc-600 group-hover:text-red-500" />
-                  <p className="text-[11px] font-bold text-white">Terminate Session</p>
-                  <p className="text-[9px] text-zinc-600">Securely logout from V12 Command.</p>
+                  <LogOut className="w-5 h-5" /> TERMINATE_SESSION
                 </button>
               </div>
-            </section>
-          ) : settingsSubTab === 'BILLING' ? (
-            <>
-              {/* THE MERCHANT CORE: ELITE BILLING UI */}
-              <div className="space-y-8 animate-in fade-in duration-700">
-                <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl">
-                  <h3 className="text-orange-500 font-black text-[10px] mb-4 uppercase tracking-widest">Active_Subscription: GURU_ELITE</h3>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-zinc-400">NEXT_BILLING_DATE: 2026-04-29</span>
-                    <button className="px-4 py-2 bg-zinc-800 rounded-lg text-[9px] font-black hover:bg-zinc-700 transition-all">MANAGE_PLAN</button>
+            </div>
+
+            {/* DYNAMIC CONTENT AREA */}
+            <div className="flex-1 p-12 overflow-y-auto custom-scrollbar bg-[#050505]/30">
+              <div className="flex justify-between items-center mb-10">
+                <h2 className="text-3xl font-black tracking-tighter uppercase text-white">{settingsSubTab}_COMMAND</h2>
+                <div className="px-4 py-1 border border-orange-500/20 rounded-full bg-orange-500/5">
+                  <span className="text-[9px] text-orange-500 font-black tracking-[0.2em] uppercase">V12_Mainframe_Active</span>
+                </div>
+              </div>
+              
+              {settingsSubTab === 'General' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Appearance & Interface</h3>
+                    <div className="flex justify-between items-center p-6 bg-zinc-900/20 rounded-3xl border border-zinc-800">
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-white uppercase">System Theme</span>
+                        <p className="text-[9px] text-zinc-600 uppercase">Select your neural interface skin.</p>
+                      </div>
+                      <select className="bg-black border border-zinc-800 text-orange-500 text-[10px] px-4 py-2 rounded-xl outline-none focus:border-orange-500/50 transition-all">
+                        <option>TACTICAL_DARK</option>
+                        <option>NEURAL_ORANGE</option>
+                        <option>GHOST_WHITE</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural Routing & Permissions</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl text-left space-y-2 hover:border-orange-500/20 transition-all group">
+                        <Radar className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
+                        <p className="text-[11px] font-bold text-white uppercase">API_ROUTING</p>
+                        <p className="text-[9px] text-zinc-600 uppercase">Configure mission data flow.</p>
+                      </button>
+                      <button className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl text-left space-y-2 hover:border-orange-500/20 transition-all group">
+                        <Wrench className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
+                        <p className="text-[11px] font-bold text-white uppercase">AGENT_PERMISSIONS</p>
+                        <p className="text-[9px] text-zinc-600 uppercase">Define neural access levels.</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">App Management</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl text-left space-y-2 hover:border-orange-500/20 transition-all group">
+                        <Shield className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
+                        <p className="text-[11px] font-bold text-white uppercase">Private Mode</p>
+                        <p className="text-[9px] text-zinc-600 uppercase">Restrict access to your lab.</p>
+                      </button>
+                      <button 
+                        onClick={() => setIsForSale(!isForSale)}
+                        className={`p-6 border rounded-3xl text-left space-y-2 transition-all group ${isForSale ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_20px_rgba(234,88,12,0.1)]' : 'bg-zinc-900/20 border-zinc-800 hover:border-orange-500/20'}`}
+                      >
+                        <Zap className={`w-5 h-5 group-hover:scale-110 transition-transform ${isForSale ? 'text-[#ff6900]' : 'text-zinc-600'}`} />
+                        <p className="text-[11px] font-bold text-white uppercase">{isForSale ? 'Marketplace_Active' : 'Post_For_Sale'}</p>
+                        <p className="text-[9px] text-zinc-600 uppercase">{isForSale ? 'Listed on marketplace.' : 'List your app for sale.'}</p>
+                      </button>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <button 
-                    onClick={() => handleSubscription('BUSINESS')}
-                    className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-2xl hover:border-orange-500/30 transition-all text-left"
-                  >
-                    <div className="text-[9px] text-zinc-500 font-black mb-1 uppercase">Business_Elite</div>
-                    <div className="text-lg font-black text-white">$99<span className="text-[10px] text-zinc-600">/MO</span></div>
-                  </button>
-                  
-                  <button 
-                    onClick={() => handleSubscription('GURU')}
-                    className="p-4 bg-orange-500/10 border border-orange-500/40 rounded-2xl hover:scale-105 transition-all text-left"
-                  >
-                    <div className="text-[9px] text-orange-500 font-black mb-1 uppercase">Guru_Elite</div>
-                    <div className="text-lg font-black text-white">$299<span className="text-[10px] text-zinc-600">/MO</span></div>
-                  </button>
+              {settingsSubTab === 'Neural' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural API Vault</h3>
+                    <div className="bg-zinc-900/20 border border-zinc-800 rounded-3xl p-8 space-y-8">
+                      <div className="grid grid-cols-1 gap-6">
+                        {[
+                          { id: 'gemini', label: 'Gemini API Key', placeholder: 'Paste Gemini API Key...', icon: <Zap className="w-4 h-4 text-[#ff6900]" /> },
+                          { id: 'chatgpt', label: 'OpenAI API Key', placeholder: 'Paste OpenAI API Key...', icon: <Key className="w-4 h-4 text-blue-500" /> },
+                          { id: 'kimi', label: 'Kimi API Key', placeholder: 'Paste Kimi API Key...', icon: <Cpu className="w-4 h-4 text-purple-500" /> }
+                        ].map((key) => (
+                          <div key={key.id} className={`space-y-2 p-4 rounded-2xl transition-all ${key.id === 'gemini' ? 'bg-orange-500/5 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.05)]' : ''}`}>
+                            <div className="flex items-center justify-between">
+                              <label className={`text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${key.id === 'gemini' ? 'text-orange-500' : 'text-zinc-500'}`}>
+                                {key.icon}
+                                {key.label}
+                              </label>
+                              {apiKeys[key.id as keyof typeof apiKeys] && (
+                                <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Active</span>
+                              )}
+                            </div>
+                            <div className="relative">
+                              <input 
+                                type="password"
+                                value={apiKeys[key.id as keyof typeof apiKeys]}
+                                onChange={(e) => handleKeyChange(key.id as any, e.target.value)}
+                                className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-sm outline-none transition-all text-zinc-300 pr-12 ${key.id === 'gemini' ? 'border-orange-500/30 focus:border-orange-500' : 'border-zinc-800 focus:border-orange-500/50'}`}
+                                placeholder={key.placeholder}
+                              />
+                              <Lock className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 ${key.id === 'gemini' ? 'text-orange-500/30' : 'text-zinc-700'}`} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-4 border-t border-zinc-900 flex justify-end">
+                        <button 
+                          onClick={() => {
+                            setTerminal(prev => prev + "\n[System]: Neural API Keys synchronized to local storage.");
+                            alert("API Keys saved successfully.");
+                          }}
+                          className="px-8 py-3 bg-orange-500 text-black font-black rounded-xl uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
+                        >
+                          Save & Sync Keys
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </>
-          ) : (
-            <section className="space-y-8 animate-in fade-in duration-700">
-              <div className="space-y-4">
-                <h3 className="text-orange-500 font-black text-[12px] tracking-[0.2em] uppercase">Terms of Service & Legal Shield</h3>
-                <div className="bg-[#050505] border border-zinc-900 rounded-2xl p-8 space-y-6 text-zinc-400 text-[11px] leading-relaxed uppercase font-bold">
-                  <p>01_OWNERSHIP: All neural agents and code generated within the V12 Command Center remain the absolute property of the Architect. MyCanvasLab provides the infrastructure; you provide the command.</p>
-                  <p>02_USAGE: Users are prohibited from using the V12 Mainframe for malicious neural activities or unauthorized data harvesting. Any breach of this protocol results in immediate session termination.</p>
-                  <p>03_LIABILITY: MyCanvasLab is not responsible for the actions of deployed agents. The Architect assumes full responsibility for all missions executed via the Sovereign Dispatch system.</p>
-                  <p>04_PRIVACY: Your API keys and neural assets are encrypted and stored in your private vault. We do not access or sell your data. Your keys, your kingdom.</p>
+              )}
+
+              {settingsSubTab === 'Security' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Security Vault</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl text-left space-y-2 hover:border-orange-500/20 transition-all group">
+                        <Lock className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
+                        <p className="text-[11px] font-bold text-white uppercase">Password_Reset</p>
+                        <p className="text-[9px] text-zinc-600 uppercase">Update your neural access code.</p>
+                      </button>
+                      <button className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl text-left space-y-2 hover:border-orange-500/20 transition-all group">
+                        <ShieldCheck className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
+                        <p className="text-[11px] font-bold text-white uppercase">MFA_Protocols</p>
+                        <p className="text-[9px] text-zinc-600 uppercase">Enable multi-factor authentication.</p>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="w-5 h-5 text-orange-500" />
-                  <span className="text-[10px] text-white font-black uppercase tracking-widest">Legal Shield Active</span>
+              )}
+
+              {settingsSubTab === 'Legal' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-700">
+                  <section>
+                    <h3 className="text-orange-500 font-black text-[12px] mb-4 uppercase tracking-[0.2em]">01_THE_SOVEREIGN_COMPACT</h3>
+                    <div className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl text-zinc-400 text-[11px] leading-relaxed font-bold uppercase">
+                      BY ENTERING MYCANVASLAB, YOU RETAIN 100% OWNERSHIP OF ALL NEURAL ASSETS, CODE, AND AGENT ARCHITECTURES. WE PROVIDE THE V12 MAINFRAME; YOU PROVIDE THE COMMAND. WE DO NOT TRAIN ON YOUR PRIVATE DATA.
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-orange-500 font-black text-[12px] mb-4 uppercase tracking-[0.2em]">02_PRIVACY_PROTOCOL</h3>
+                    <p className="text-zinc-500 text-[10px] leading-relaxed mb-4 uppercase">
+                      YOUR API KEYS ARE ENCRYPTED AT REST IN THE NEURAL VAULT. DATA TRANSMISSION IS ROUTED VIA SECURE HETZNER NODES (46.62.209.177). LOGS ARE WIPED EVERY 24 HOURS UNLESS SPECIFIED BY THE ARCHITECT.
+                    </p>
+                  </section>
+
+                  <div className="flex gap-4">
+                    <button className="px-6 py-3 border border-orange-500/20 rounded-xl text-[9px] font-black uppercase text-orange-500 hover:bg-orange-500/10 transition-all">
+                      DOWNLOAD_FULL_TERMS.PDF
+                    </button>
+                    <button className="px-6 py-3 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-500 hover:text-white transition-all">
+                      VIEW_PRIVACY_POLICY
+                    </button>
+                  </div>
                 </div>
-                <button className="px-6 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-all">Download PDF</button>
-              </div>
-            </section>
-          )}
+              )}
+
+              {settingsSubTab === 'Data' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">External Connections</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-4 bg-zinc-900/20 border border-zinc-800 rounded-2xl">
+                        <div className="flex items-center gap-4">
+                          <Github className="w-5 h-5 text-white" />
+                          <div>
+                            <p className="text-[11px] font-bold text-white uppercase tracking-widest">GitHub Repository</p>
+                            <p className="text-[9px] text-zinc-600 uppercase">Sync your code to the cloud.</p>
+                          </div>
+                        </div>
+                        <button className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors">Configure</button>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-zinc-900/20 border border-zinc-800 rounded-2xl">
+                        <div className="flex items-center gap-4">
+                          <Database className="w-5 h-5 text-[#3ecf8e]" />
+                          <div>
+                            <p className="text-[11px] font-bold text-white uppercase tracking-widest">Supabase Database</p>
+                            <p className="text-[9px] text-zinc-600 uppercase">Manage your persistent data.</p>
+                          </div>
+                        </div>
+                        <button className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Data Controls</h3>
+                    <div className="space-y-4">
+                      <button className="w-full p-6 text-left bg-red-500/5 border border-red-500/20 rounded-3xl text-red-500 hover:bg-red-500/10 transition-all group">
+                        <div className="flex justify-between items-center">
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-black uppercase">DELETE_ALL_NEURAL_TRAILS</span>
+                            <p className="text-[9px] text-red-500/60 uppercase">Wipe all mission data and session logs.</p>
+                          </div>
+                          <AlertCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsSubTab === 'Billing' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Subscription Status</h3>
+                    <div className="p-8 bg-orange-500/5 border border-orange-500/20 rounded-[40px] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-8">
+                        <MCL_Logo size="sm" />
+                      </div>
+                      <h3 className="text-orange-500 font-black text-[10px] mb-4 uppercase tracking-widest">Active_Subscription: {userPlan.replace(' ', '_')}</h3>
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                          <div className="text-4xl font-black text-white">$299<span className="text-sm text-zinc-600">/MO</span></div>
+                          <span className="text-[10px] text-zinc-400 uppercase tracking-widest">NEXT_BILLING_DATE: 2026-04-29</span>
+                        </div>
+                        <button className="px-8 py-3 bg-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-700 transition-all">MANAGE_PLAN</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Upgrade Neural Capacity</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {TIERS.filter(t => t.name !== 'GURU ELITE').map((tier, i) => (
+                        <button 
+                          key={i}
+                          onClick={() => handleSubscription(tier.name.split(' ')[0])}
+                          className="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl hover:border-orange-500/30 transition-all text-left group"
+                        >
+                          <div className="text-[9px] text-zinc-500 font-black mb-1 uppercase tracking-widest">{tier.name}</div>
+                          <div className="text-2xl font-black text-white mb-4">{tier.price}<span className="text-[10px] text-zinc-600">/MO</span></div>
+                          <div className="text-[9px] text-zinc-400 uppercase font-bold group-hover:text-orange-500 transition-colors">ACTIVATE_CORE →</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1776,76 +1890,104 @@ function App() {
   const renderAiFeaturesModal = () => {
     if (!showAiFeatures) return null;
 
-    const features = [
-      {
-        icon: <Music className="w-5 h-5 text-blue-400" />,
-        title: "Generate music",
-        description: "Add AI music generation to your app. Let users create custom soundtracks, jingles, or background music from text prompts or images using Lyria."
-      },
-      {
-        icon: <ShieldCheck className="w-5 h-5 text-blue-400" />,
-        title: "Add database and auth",
-        description: "Add persistence to your app and keep track of user data with Firestore. Use Google Sign-In with Firebase Auth to securely identify users."
-      },
-      {
-        icon: <ImagePlus className="w-5 h-5 text-blue-400" />,
-        title: "Create & edit images",
-        description: "Create and edit images from text prompts, optimized for speed and high-volume use cases."
-      },
-      {
-        icon: <Volume2 className="w-5 h-5 text-blue-400" />,
-        title: "Add voice conversations",
-        description: "Use the Gemini Live API to give your app a voice and make your own conversational experiences."
-      },
-      {
-        icon: <Video className="w-5 h-5 text-blue-400" />,
-        title: "Animate images into video",
-        description: "Bring images to life with Veo 3. Let users upload a product photo and turn it into a dynamic video ad, or animate a character's portrait."
-      },
-      {
-        icon: <Globe className="w-5 h-5 text-blue-400" />,
-        title: "Use Google Search data",
-        description: "Connect your app to real-time Google Search results. Build an agent that can discuss current events, cite recent news, or fact-check information."
-      },
-      {
-        icon: <MapPin className="w-5 h-5 text-blue-400" />,
-        title: "Use Google Maps data",
-        description: "Connect your app to real-time Google Maps data. Build an agent that can pull information about places, routes, or directions."
-      },
-      {
-        icon: <Sparkles className="w-5 h-5 text-blue-400" />,
-        title: "Generate high-quality images",
-        description: "Generate high-quality images from a text prompt. Create blog post heroes, concept art, or unique assets in your application."
-      }
+    const aiFeatures = [
+      { id: 'MUSIC', title: 'Generate Music', desc: 'Text-to-Music via Lyria 3 Engine', icon: '🎵', guruOnly: true },
+      { id: 'VIDEO', title: 'Animate Video', desc: 'Bring images to life with Veo 3', icon: '🎬', guruOnly: true },
+      { id: 'IMAGE', title: 'Neural Imaging', desc: 'High-quality Nano Banana 2 generation', icon: '🎨' },
+      { id: 'SEARCH', title: 'Google Search Data', desc: 'Real-time live web grounding', icon: '🔍' },
+      { id: 'VOICE', title: 'Voice Conversations', desc: 'Live Gemini Voice interaction', icon: '🎙️' },
+      { id: 'MAPS', title: 'Spatial Intelligence', desc: 'Google Maps data integration', icon: '📍' }
     ];
+
+    const FeatureCard = ({ feature }: { feature: any }) => {
+      const isLocked = feature.guruOnly && userPlan !== 'GURU ELITE';
+      
+      return (
+        <div 
+          onClick={() => {
+            if (isLocked) {
+              setTerminal(prev => prev + `\n\n[System]: Feature "${feature.id}" is locked. GURU_ELITE clearance required.`);
+              alert("GURU_ELITE clearance required for this module.");
+            } else {
+              setTerminal(prev => prev + `\n\n[System]: Neural Module "${feature.id}" integrated into V12 Mainframe.`);
+              setShowAiFeatures(false);
+            }
+          }}
+          className={`p-6 bg-zinc-900/40 border border-zinc-800 rounded-3xl hover:border-[#ff6900]/50 transition-all cursor-pointer group shadow-2xl relative ${isLocked ? 'opacity-50 grayscale' : ''}`}
+        >
+          {/* TACTICAL ORANGE ICON */}
+          <div className="w-12 h-12 rounded-2xl bg-[#ff6900]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span className="text-2xl filter drop-shadow-[0_0_8px_#ff6900]">{feature.icon}</span>
+          </div>
+          
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-[12px] font-black uppercase text-white tracking-widest group-hover:text-[#ff6900]">
+              {feature.title}
+            </h3>
+            {feature.guruOnly && (
+              <span className="text-[8px] font-black px-2 py-0.5 bg-orange-500 text-black rounded-full uppercase tracking-tighter">
+                GURU_ONLY
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-zinc-500 font-bold leading-relaxed uppercase">
+            {feature.desc}
+          </p>
+
+          {/* SELECTION INDICATOR */}
+          <div className="mt-6 flex justify-end">
+            <div className="w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center group-hover:border-[#ff6900]">
+              <div className="w-2 h-2 rounded-full bg-[#ff6900] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+
+          {isLocked && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-3xl">
+              <Lock className="w-8 h-8 text-orange-500/50" />
+            </div>
+          )}
+        </div>
+      );
+    };
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-end p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-        <div className="w-full max-w-md h-full bg-[#0a0a0a] border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-right-8 duration-500">
-          <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
-            <h2 className="text-lg font-black text-white uppercase tracking-tight">Add AI features</h2>
+        <div className="w-full max-w-xl h-full bg-[#0a0a0a] border border-zinc-800 rounded-[40px] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-right-8 duration-500">
+          <div className="p-8 border-b border-zinc-900 flex items-center justify-between bg-zinc-900/20">
+            <div className="space-y-1">
+              <h2 className="text-xl font-black text-white uppercase tracking-widest">Neural Feature Matrix</h2>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Select high-performance modules for your agent</p>
+            </div>
             <button 
               onClick={() => setShowAiFeatures(false)}
-              className="p-2 hover:bg-zinc-900 rounded-full transition-colors text-zinc-500 hover:text-white"
+              className="p-3 hover:bg-zinc-900 rounded-2xl transition-colors text-zinc-500 hover:text-white border border-zinc-800"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-            <div className="grid grid-cols-1 gap-4">
-              {features.map((f, i) => (
-                <div key={i} className="p-5 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl group hover:border-blue-500/30 hover:bg-zinc-900/50 transition-all cursor-pointer">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-zinc-900 rounded-xl border border-zinc-800 group-hover:border-blue-500/20 transition-all">
-                      {f.icon}
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">{f.title}</h3>
-                      <p className="text-[11px] text-zinc-500 leading-relaxed font-medium">{f.description}</p>
-                    </div>
-                  </div>
-                </div>
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div className="grid grid-cols-2 gap-6">
+              {aiFeatures.map((f, i) => (
+                <FeatureCard key={i} feature={f} />
               ))}
+            </div>
+          </div>
+          <div className="p-8 bg-zinc-900/40 border-t border-zinc-900">
+            <div className="flex items-center justify-between p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl">
+              <div className="space-y-1">
+                <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest">Current Authorization</p>
+                <p className="text-white font-black uppercase tracking-widest">{userPlan}</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setSettingsSubTab('Billing');
+                  setView('SETTINGS');
+                  setShowAiFeatures(false);
+                }}
+                className="px-6 py-2 bg-orange-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest hover:scale-105 transition-all"
+              >
+                Upgrade Clearance
+              </button>
             </div>
           </div>
         </div>
@@ -2292,7 +2434,7 @@ function App() {
                       className="w-full bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-200"
                       placeholder="Paste Agent API Key..."
                     />
-                    <Zap className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-500/50" />
+                    <Zap className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[#ff6900]/50" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -2332,7 +2474,7 @@ function App() {
               onClick={() => setShowAiFeatures(true)}
               className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all flex items-center gap-2 whitespace-nowrap"
             >
-              <Zap className="w-3 h-3 text-orange-500" />
+              <Zap className="w-3 h-3 text-[#ff6900]" />
               AI Features
             </button>
             <button 

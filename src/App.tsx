@@ -4,7 +4,7 @@ import {
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
   Key, Lock, Home, BarChart3, Download, Share2, 
-  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff,
+  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff, Mail,
   Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
   Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon
 } from "lucide-react";
@@ -71,6 +71,25 @@ const TierCard = ({ tier }: { tier: typeof TIERS[0] }) => (
   </div>
 );
 
+// THE SOVEREIGN MERCHANT LOGO (OPTION 1)
+const MCL_Logo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
+  const dimensions = 
+    size === "sm" ? "w-6 h-6" : 
+    size === "lg" ? "w-32 h-32" : "w-10 h-10";
+  
+  return (
+    <div className={`relative ${dimensions} flex items-center justify-center`}>
+      {/* THE TACTICAL M-DIAMOND SVG */}
+      <svg viewBox="0 0 100 100" className="fill-orange-500 drop-shadow-[0_0_8px_rgba(234,88,12,0.5)]">
+        <path d="M10 90 L50 10 L90 90 L70 90 L50 50 L30 90 Z" />
+        <path d="M50 35 L65 70 L35 70 Z" className="fill-black/40" />
+      </svg>
+      {/* THE NEURAL PULSE BACKGROUND */}
+      <div className="absolute inset-0 bg-orange-500/10 blur-xl rounded-full -z-10 animate-pulse" />
+    </div>
+  );
+};
+
 const RevenueManifesto = () => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 p-10 bg-orange-500/5 border border-orange-500/20 rounded-[40px] backdrop-blur-3xl animate-in fade-in zoom-in duration-1000 max-w-7xl w-full">
     <div className="space-y-4">
@@ -106,14 +125,24 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
   ];
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white font-mono flex flex-col items-center pt-20 px-6 overflow-y-auto custom-scrollbar">
+    <div className="min-h-screen bg-[#020202] text-white font-mono flex flex-col items-center pt-20 px-6 overflow-y-auto custom-scrollbar relative">
       
+      {/* SUBTLE LOGIN / REGISTER BUTTON */}
+      <button 
+        onClick={onEnter}
+        className="absolute top-8 right-8 px-6 py-2 border border-orange-500/30 rounded-xl bg-black text-orange-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-orange-500/10 hover:border-orange-500/60 transition-all shadow-[0_0_20px_rgba(234,88,12,0.05)]"
+      >
+        Login / Register
+      </button>
+
       {/* THE PULSING NEURAL DIAMOND (THE HEART) - PRIVATE ADMIN ACCESS */}
       <div 
         onClick={onAdminEnter}
         className="py-20 group cursor-pointer flex flex-col items-center"
       >
-        <div className="text-8xl transition-transform duration-700 group-hover:scale-125 group-hover:rotate-[360deg] filter drop-shadow-[0_0_40px_rgba(234,88,12,0.4)]">💎</div>
+        <div className="transition-transform duration-700 group-hover:scale-125 group-hover:rotate-[360deg]">
+          <MCL_Logo size="lg" />
+        </div>
         <h1 className="mt-8 text-6xl font-black uppercase tracking-tighter">MYCANVASLAB</h1>
         <div className="mt-4 px-6 py-1 border border-orange-500/20 rounded-full bg-orange-500/5">
           <span className="text-[10px] text-orange-500 font-black tracking-[0.4em] animate-pulse uppercase">Status: Noble_Stable</span>
@@ -161,7 +190,33 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
 };
 
 function App() {
-  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING'>('CREATOR');
+  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL'>('CREATOR');
+  const [galleryItems, setGalleryItems] = useState(MOCK_GALLERY);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const url = event.target?.result as string;
+      const newItem = {
+        id: Date.now(),
+        title: file.name,
+        url,
+        type: file.type.startsWith('video') ? 'video' : 'image'
+      };
+      setGalleryItems(prev => [newItem, ...prev]);
+      setTerminal(prev => prev + `\n\n[System]: Asset "${file.name}" added to Media Library.`);
+    };
+    reader.readAsDataURL(file);
+  };
+  const [mailAccount, setMailAccount] = useState<'SALES' | 'SUPPORT' | 'ACCOUNTS'>('SALES');
+  const [mailFolder, setMailFolder] = useState<'INBOX' | 'SENT' | 'DRAFTS'>('INBOX');
+  const [selectedMailId, setSelectedMailId] = useState<number | null>(null);
+  const [isComposingMail, setIsComposingMail] = useState(false);
+  const [mailDraft, setMailDraft] = useState({ to: '', subject: '', body: '' });
   const [activeTab, setActiveTab] = useState('PREVIEW');
   const [marketingTab, setMarketingTab] = useState('create');
   
@@ -231,6 +286,25 @@ function App() {
     { name: "Neural_Net_Beta", visibility: "PRIVATE", fee: "0.08 / req", status: "ERROR" }
   ]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{ data: string, mimeType: string, name: string } | null>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      const data = base64.split(',')[1];
+      setAttachment({
+        data,
+        mimeType: file.type,
+        name: file.name
+      });
+      setTerminal(prev => prev + `\n\n[System]: Asset "${file.name}" loaded into Neural Buffer.`);
+    };
+    reader.readAsDataURL(file);
+  };
   const terminalEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -344,9 +418,19 @@ function App() {
           return;
         }
         const ai = new GoogleGenAI({ apiKey: key });
+        const parts: any[] = [{ text: input }];
+        if (attachment) {
+          parts.push({
+            inlineData: {
+              data: attachment.data,
+              mimeType: attachment.mimeType
+            }
+          });
+        }
+
         const response = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
-          contents: [{ role: "user", parts: [{ text: input }] }],
+          contents: [{ role: "user", parts }],
           config: {
             systemInstruction: "You are the MyCanvasLab AI Commander. Your mission is to assist the Architect in building high-performance, income-generating web applications. You are technical, noble, and direct. You value the 'V12' power of the Hetzner mainframe. You do not make excuses; you provide solutions. You speak with the confidence of a Diamond."
           }
@@ -354,6 +438,8 @@ function App() {
         
         if (response.text) {
           setTerminal(prev => prev + `\n\n[${model}]: ${response.text}`);
+          setAttachment(null);
+          setInput("");
         } else {
           setTerminal(prev => prev + `\n\n[System]: API Response empty. Check billing/quota.`);
         }
@@ -419,6 +505,8 @@ function App() {
       {/* TOP UTILITY STRIP */}
       <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-6 flex items-center justify-between z-20">
         <div className="flex items-center gap-6">
+          <MCL_Logo size="sm" />
+          <div className="w-px h-4 bg-zinc-800 mx-2" />
            {/* THE TOP TAB BAR */}
            <div className="flex gap-4 p-1 bg-black/40 border border-zinc-900 rounded-xl backdrop-blur-md">
              {['MISSION CONTROL', 'PUBLISH / BASH'].map((tab) => {
@@ -693,6 +781,8 @@ function App() {
         {renderSocialLoginModal()}
         {/* TOP TABS */}
         <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+          <MCL_Logo size="sm" />
+          <div className="w-px h-4 bg-zinc-800 mx-2" />
           {[
             { id: 'create', label: 'Campaign Creator', icon: Send },
             { id: 'gallery', label: 'Media Gallery', icon: Grid },
@@ -860,9 +950,21 @@ function App() {
 
           {marketingTab === 'gallery' && (
             <div className="max-w-6xl mx-auto space-y-6">
-              <h2 className="text-2xl font-black text-white tracking-tighter uppercase mb-8">Media Library</h2>
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Media Library</h2>
+                <div className="flex items-center gap-4">
+                  <input type="file" ref={galleryInputRef} className="hidden" onChange={handleGalleryUpload} accept="image/*,video/*" />
+                  <button 
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="px-6 py-2 bg-orange-500 text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2"
+                  >
+                    <Upload size={14} />
+                    Upload Asset
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {MOCK_GALLERY.map(item => (
+                {galleryItems.map(item => (
                   <div key={item.id} className="bg-[#050505] rounded-2xl overflow-hidden border border-zinc-900 group relative">
                     <div className="relative h-48 border-b border-zinc-900">
                       <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
@@ -989,6 +1091,8 @@ function App() {
     <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
       {/* TOP TABS */}
       <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+        <MCL_Logo size="sm" />
+        <div className="w-px h-4 bg-zinc-800 mx-2" />
         {[
           { id: 'METRICS', label: 'System Metrics' },
           { id: 'WALL', label: 'Live Bash Monitor' }
@@ -1091,6 +1195,8 @@ function App() {
     <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
       {/* TOP TABS */}
       <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+        <MCL_Logo size="sm" />
+        <div className="w-px h-4 bg-zinc-800 mx-2" />
         {[
           { id: 'FOLDERS', label: 'Folders' },
           { id: 'TRANSFER', label: 'Upload / Export' },
@@ -1211,9 +1317,205 @@ function App() {
     </div>
   );
 
+  const renderMailView = () => {
+    const MOCK_EMAILS: any = {
+      SALES: [
+        { id: 1, from: "investor@venture.com", subject: "Series A Inquiry", body: "We are interested in the V12 Mainframe scalability. Can we schedule a call?", date: "10:30 AM", folder: 'INBOX' },
+        { id: 2, from: "whale@crypto.io", subject: "Bulk License Purchase", body: "Looking to buy 500 Guru Elite licenses for my team. What's the discount?", date: "Yesterday", folder: 'INBOX' },
+      ],
+      SUPPORT: [
+        { id: 3, from: "user123@gmail.com", subject: "API Connection Error", body: "I'm getting a 403 error when connecting to the Gemini vault. Please help.", date: "09:15 AM", folder: 'INBOX' },
+        { id: 4, from: "dev_pro@stack.com", subject: "Feature Request: Webhooks", body: "Would love to see webhook support for agent mobilization events.", date: "2 days ago", folder: 'INBOX' },
+      ],
+      ACCOUNTS: [
+        { id: 5, from: "billing@stripe.com", subject: "Payout Successful", body: "Your daily payout of $12,450.00 has been initiated.", date: "08:00 AM", folder: 'INBOX' },
+        { id: 6, from: "tax@irs.gov", subject: "Tax Compliance Update", body: "Please review the new digital asset reporting requirements for 2026.", date: "Last week", folder: 'INBOX' },
+      ]
+    };
+
+    const currentEmails = MOCK_EMAILS[mailAccount].filter((m: any) => m.folder === mailFolder);
+    const selectedMail = MOCK_EMAILS[mailAccount].find((m: any) => m.id === selectedMailId);
+
+    return (
+      <div className="flex-1 flex flex-col bg-[#010101] overflow-hidden">
+        {/* TOP BAR */}
+        <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-6">
+            <MCL_Logo size="sm" />
+            <h3 className="text-[10px] text-orange-500 font-black uppercase tracking-[0.2em]">Admin_Mail_Terminal</h3>
+            <div className="flex gap-2">
+              {['SALES', 'SUPPORT', 'ACCOUNTS'].map(acc => (
+                <button 
+                  key={acc}
+                  onClick={() => { setMailAccount(acc as any); setSelectedMailId(null); }}
+                  className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${mailAccount === acc ? 'border-orange-500 text-orange-500 bg-orange-500/10' : 'border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}
+                >
+                  {acc}@mycanvaslab.com
+                </button>
+              ))}
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsComposingMail(true)}
+            className="px-4 py-2 bg-orange-500 text-black font-black rounded-xl uppercase text-[9px] tracking-widest shadow-[0_0_15px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
+          >
+            New Message
+          </button>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* SIDEBAR */}
+          <div className="w-64 border-r border-[#181818] bg-[#050505] p-4 space-y-2">
+            {['INBOX', 'SENT', 'DRAFTS'].map(folder => (
+              <button 
+                key={folder}
+                onClick={() => { setMailFolder(folder as any); setSelectedMailId(null); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mailFolder === folder ? 'bg-orange-500/10 text-orange-500' : 'text-zinc-600 hover:bg-zinc-900/50 hover:text-zinc-400'}`}
+              >
+                <Folder className="w-4 h-4" />
+                {folder}
+              </button>
+            ))}
+          </div>
+
+          {/* LIST */}
+          <div className="w-96 border-r border-[#181818] bg-[#020202] overflow-y-auto custom-scrollbar">
+            {currentEmails.length > 0 ? (
+              currentEmails.map((mail: any) => (
+                <button 
+                  key={mail.id}
+                  onClick={() => setSelectedMailId(mail.id)}
+                  className={`w-full p-6 border-b border-[#181818] text-left transition-all hover:bg-zinc-900/30 ${selectedMailId === mail.id ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''}`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-[10px] font-black text-white uppercase truncate max-w-[150px]">{mail.from}</span>
+                    <span className="text-[8px] text-zinc-600 font-bold">{mail.date}</span>
+                  </div>
+                  <h4 className="text-[11px] font-bold text-zinc-300 mb-1 truncate">{mail.subject}</h4>
+                  <p className="text-[10px] text-zinc-600 line-clamp-2 leading-relaxed">{mail.body}</p>
+                </button>
+              ))
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-4">
+                <Mail className="w-8 h-8 text-zinc-800" />
+                <p className="text-[10px] text-zinc-700 font-black uppercase tracking-widest">No messages in {mailFolder}</p>
+              </div>
+            )}
+          </div>
+
+          {/* CONTENT */}
+          <div className="flex-1 bg-[#010101] overflow-y-auto custom-scrollbar">
+            {selectedMail ? (
+              <div className="p-12 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedMail.subject}</h2>
+                    <div className="flex gap-2">
+                       <button className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 hover:text-white transition-all"><Share2 className="w-4 h-4" /></button>
+                       <button className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 hover:text-red-500 transition-all"><X className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl">
+                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 font-black text-xs">
+                      {selectedMail.from[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-white">{selectedMail.from}</p>
+                      <p className="text-[9px] text-zinc-600 uppercase tracking-widest">To: {mailAccount.toLowerCase()}@mycanvaslab.com</p>
+                    </div>
+                    <div className="ml-auto text-[9px] text-zinc-700 font-black uppercase">{selectedMail.date}</div>
+                  </div>
+                </div>
+                <div className="text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                  {selectedMail.body}
+                </div>
+                <div className="pt-8 border-t border-zinc-900">
+                  <textarea 
+                    className="w-full h-32 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 mb-4"
+                    placeholder="Type your response..."
+                  />
+                  <button className="px-8 py-3 bg-orange-500 text-black font-black rounded-xl uppercase text-[10px] tracking-widest shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 transition-all">
+                    Send Reply
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-6">
+                <div className="w-24 h-24 rounded-full bg-orange-500/5 border border-orange-500/10 flex items-center justify-center">
+                  <Mail className="w-10 h-10 text-orange-500/20" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] text-zinc-500 font-black uppercase tracking-widest">Secure Mail Terminal</p>
+                  <p className="text-[9px] text-zinc-700 uppercase tracking-[0.2em]">Select a message to decrypt and view</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* COMPOSE MODAL */}
+        {isComposingMail && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+            <div className="w-full max-w-2xl bg-[#080808] border border-orange-500/20 rounded-[40px] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in duration-300">
+              <div className="p-8 border-b border-zinc-900 flex justify-between items-center bg-orange-500/5">
+                <h3 className="text-orange-500 font-black text-[12px] tracking-[0.2em] uppercase">New_Neural_Transmission</h3>
+                <button onClick={() => setIsComposingMail(false)} className="text-zinc-500 hover:text-white transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="p-10 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">Recipient</label>
+                  <input 
+                    type="text"
+                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                    placeholder="address@domain.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">Subject</label>
+                  <input 
+                    type="text"
+                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                    placeholder="Mission objective..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">Message_Body</label>
+                  <textarea 
+                    className="w-full h-48 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 resize-none"
+                    placeholder="Enter transmission content..."
+                  />
+                </div>
+                <div className="pt-6 flex justify-end gap-4">
+                  <button 
+                    onClick={() => setIsComposingMail(false)}
+                    className="px-8 py-4 border border-zinc-800 text-zinc-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:border-zinc-700 hover:text-zinc-400 transition-all"
+                  >
+                    Discard
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsComposingMail(false);
+                      setTerminal(prev => prev + "\n[System]: Neural transmission dispatched successfully.");
+                    }}
+                    className="px-10 py-4 bg-orange-500 text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-[0_0_30px_rgba(234,88,12,0.3)] hover:scale-105 transition-all"
+                  >
+                    Send Transmission
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSettingsView = () => {
+    // THE MERCHANT CORE: ELITE BILLING
     const handleSubscription = (tier: string) => {
-      setTerminal(prev => prev + `\n[System]: INITIATING_SECURE_PAYMENT: ${tier}_ELITE...`);
+      setTerminal(prev => prev + `\n\n[System]: INITIATING_SECURE_PAYMENT: ${tier}_ELITE...`);
       // Redirect to your Stripe / PayPal / Crypto link
       window.location.href = `https://billing.mycanvaslab.com/checkout?plan=${tier}`;
     };
@@ -1222,10 +1524,13 @@ function App() {
       <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
         {/* TOP TABS */}
         <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+          <MCL_Logo size="sm" />
+          <div className="w-px h-4 bg-zinc-800 mx-2" />
           {[
             { id: 'INTEGRATIONS', label: 'Integrations' },
             { id: 'CONFIG', label: 'App Config' },
-            { id: 'BILLING', label: 'Billing' }
+            { id: 'BILLING', label: 'Account / Billing' },
+            { id: 'LEGAL', label: 'Legal' }
           ].map(tab => (
             <button 
               key={tab.id}
@@ -1349,34 +1654,56 @@ function App() {
                 </button>
               </div>
             </section>
-          ) : (
-            <div className="space-y-8 animate-in fade-in duration-700">
-              <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl">
-                <h3 className="text-orange-500 font-black text-[10px] mb-4 uppercase tracking-widest">Active_Subscription: GURU_ELITE</h3>
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] text-zinc-400">NEXT_BILLING_DATE: 2026-04-29</span>
-                  <button className="px-4 py-2 bg-zinc-800 rounded-lg text-[9px] font-black hover:bg-zinc-700 transition-all">MANAGE_PLAN</button>
+          ) : settingsSubTab === 'BILLING' ? (
+            <>
+              {/* THE MERCHANT CORE: ELITE BILLING UI */}
+              <div className="space-y-8 animate-in fade-in duration-700">
+                <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl">
+                  <h3 className="text-orange-500 font-black text-[10px] mb-4 uppercase tracking-widest">Active_Subscription: GURU_ELITE</h3>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] text-zinc-400">NEXT_BILLING_DATE: 2026-04-29</span>
+                    <button className="px-4 py-2 bg-zinc-800 rounded-lg text-[9px] font-black hover:bg-zinc-700 transition-all">MANAGE_PLAN</button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => handleSubscription('BUSINESS')}
+                    className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-2xl hover:border-orange-500/30 transition-all text-left"
+                  >
+                    <div className="text-[9px] text-zinc-500 font-black mb-1 uppercase">Business_Elite</div>
+                    <div className="text-lg font-black text-white">$99<span className="text-[10px] text-zinc-600">/MO</span></div>
+                  </button>
+                  
+                  <button 
+                    onClick={() => handleSubscription('GURU')}
+                    className="p-4 bg-orange-500/10 border border-orange-500/40 rounded-2xl hover:scale-105 transition-all text-left"
+                  >
+                    <div className="text-[9px] text-orange-500 font-black mb-1 uppercase">Guru_Elite</div>
+                    <div className="text-lg font-black text-white">$299<span className="text-[10px] text-zinc-600">/MO</span></div>
+                  </button>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  onClick={() => handleSubscription('BUSINESS')}
-                  className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-2xl hover:border-orange-500/30 transition-all text-left"
-                >
-                  <div className="text-[9px] text-zinc-500 font-black mb-1 uppercase">Business_Elite</div>
-                  <div className="text-lg font-black text-white">$99<span className="text-[10px] text-zinc-600">/MO</span></div>
-                </button>
-                
-                <button 
-                  onClick={() => handleSubscription('GURU')}
-                  className="p-4 bg-orange-500/10 border border-orange-500/40 rounded-2xl hover:scale-105 transition-all text-left"
-                >
-                  <div className="text-[9px] text-orange-500 font-black mb-1 uppercase">Guru_Elite</div>
-                  <div className="text-lg font-black text-white">$299<span className="text-[10px] text-zinc-600">/MO</span></div>
-                </button>
+            </>
+          ) : (
+            <section className="space-y-8 animate-in fade-in duration-700">
+              <div className="space-y-4">
+                <h3 className="text-orange-500 font-black text-[12px] tracking-[0.2em] uppercase">Terms of Service & Legal Shield</h3>
+                <div className="bg-[#050505] border border-zinc-900 rounded-2xl p-8 space-y-6 text-zinc-400 text-[11px] leading-relaxed uppercase font-bold">
+                  <p>01_OWNERSHIP: All neural agents and code generated within the V12 Command Center remain the absolute property of the Architect. MyCanvasLab provides the infrastructure; you provide the command.</p>
+                  <p>02_USAGE: Users are prohibited from using the V12 Mainframe for malicious neural activities or unauthorized data harvesting. Any breach of this protocol results in immediate session termination.</p>
+                  <p>03_LIABILITY: MyCanvasLab is not responsible for the actions of deployed agents. The Architect assumes full responsibility for all missions executed via the Sovereign Dispatch system.</p>
+                  <p>04_PRIVACY: Your API keys and neural assets are encrypted and stored in your private vault. We do not access or sell your data. Your keys, your kingdom.</p>
+                </div>
               </div>
-            </div>
+              <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-3xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5 text-orange-500" />
+                  <span className="text-[10px] text-white font-black uppercase tracking-widest">Legal Shield Active</span>
+                </div>
+                <button className="px-6 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-all">Download PDF</button>
+              </div>
+            </section>
           )}
         </div>
       </div>
@@ -1589,6 +1916,9 @@ function App() {
     return (
       <div className="min-h-screen bg-[#020202] flex items-center justify-center p-6 font-mono">
         <div className="w-full max-w-md bg-[#080808] border border-orange-500/20 rounded-3xl p-10 space-y-8 backdrop-blur-xl shadow-2xl">
+          <div className="flex justify-center mb-4">
+            <MCL_Logo size="md" />
+          </div>
           {authView === 'LOGIN' && (
             <>
               <div className="text-center space-y-2">
@@ -2020,10 +2350,18 @@ function App() {
                 <button className="text-zinc-700 hover:text-zinc-400 transition-colors">
                   <Radar className="w-4 h-4" />
                 </button>
-                <input type="file" ref={fileInputRef} className="hidden" />
-                <button onClick={() => fileInputRef.current?.click()} className="text-zinc-700 hover:text-orange-500 transition-colors">
+                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+                <button onClick={() => fileInputRef.current?.click()} className={`transition-colors ${attachment ? 'text-orange-500' : 'text-zinc-700 hover:text-orange-500'}`}>
                   <Plus className="w-5 h-5" />
                 </button>
+                {attachment && (
+                  <div className="flex items-center gap-2 px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded-md animate-in fade-in slide-in-from-left-2">
+                    <span className="text-[9px] text-orange-500 font-bold truncate max-w-[80px]">{attachment.name}</span>
+                    <button onClick={() => setAttachment(null)} className="text-orange-500 hover:text-white transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
                 <div className="flex bg-zinc-900/50 rounded-lg p-1 gap-1 border border-[#222]">
                   {['GEMINI', 'CHATGPT'].map(m => (
                     <button 
@@ -2053,6 +2391,7 @@ function App() {
       {view === 'HOME' && renderHomeView()}
       {view === 'STATS' && renderStatsView()}
       {view === 'FILES' && renderFilesView()}
+      {view === 'MAIL' && renderMailView()}
       {view === 'SETTINGS' && renderSettingsView()}
 
       {/* FLOATING NAV */}
@@ -2087,6 +2426,14 @@ function App() {
         >
           <DollarSign className="w-5 h-5" strokeWidth={1.5} />
         </button>
+        {loginMode === 'ADMIN' && (
+          <button 
+            onClick={() => setView('MAIL')}
+            className={`transition-all duration-300 ${view === 'MAIL' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
+          >
+            <Mail className="w-5 h-5" strokeWidth={1.5} />
+          </button>
+        )}
         <button 
           onClick={() => setView('FILES')}
           className={`transition-all duration-300 ${view === 'FILES' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}

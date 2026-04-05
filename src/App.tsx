@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
+import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, db } from './firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
@@ -281,6 +283,8 @@ function App() {
   const [newPost, setNewPost] = useState("");
   const [dispatchStatus, setDispatchStatus] = useState('SYSTEM_IDLE');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
   const [loginMode, setLoginMode] = useState<'ADMIN' | 'MEMBER'>('ADMIN');
@@ -374,13 +378,69 @@ function App() {
     setTimeout(scrollToBottom, 100);
   };
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setIsLoggedIn(true);
+        
+        // Sync user to Firestore
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (!userSnap.exists()) {
+          const role = firebaseUser.email === 'push2playlive@gmail.com' ? 'admin' : 'member';
+          await setDoc(userRef, {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            role: role,
+            createdAt: serverTimestamp()
+          });
+          if (role === 'admin') setLoginMode('ADMIN');
+          else setLoginMode('MEMBER');
+        } else {
+          const userData = userSnap.data();
+          if (userData.role === 'admin') setLoginMode('ADMIN');
+          else setLoginMode('MEMBER');
+        }
+        
+        setTerminal(prev => prev + `\n\n[System]: Neural Link Established. Welcome, ${firebaseUser.displayName || 'Architect'}.`);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+      setIsAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setTerminal(prev => prev + `\n\n[System]: Initiating Google Neural Link...`);
+      await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      setTerminal(prev => prev + `\n\n[System]: Login Failed: ${error.message}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setTerminal(prev => prev + `\n\n[System]: Neural Link Terminated.`);
+    } catch (error: any) {
+      setTerminal(prev => prev + `\n\n[System]: Logout Error: ${error.message}`);
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginEmail === 'mycanvas@utubemail.com' && loginPassword === 'admin123') {
+    if ((loginEmail === 'mycanvas@utubemail.com' || loginEmail === 'push2playlive@gmail.com') && loginPassword === 'admin123') {
       setIsLoggedIn(true);
       setTerminal(prev => prev + `\n\n[System]: Admin Access Granted. Welcome, Architect.`);
     } else {
-      setTerminal(prev => prev + `\n\n[System]: Access Denied. Invalid Credentials.`);
+      setTerminal(prev => prev + `\n\n[System]: Access Denied. Invalid Credentials. Please use Google Login for secure access.`);
     }
   };
 
@@ -1592,7 +1652,7 @@ function App() {
 
               <div className="pt-8 border-t border-zinc-800">
                 <button 
-                  onClick={() => setIsLoggedIn(false)}
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-500 hover:text-red-500 transition-all text-[10px] font-black uppercase tracking-widest"
                 >
                   <LogOut className="w-5 h-5" /> TERMINATE_SESSION
@@ -2112,6 +2172,16 @@ function App() {
     );
   };
 
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-[#020202] flex items-center justify-center font-mono">
+        <div className="text-orange-500 animate-pulse uppercase tracking-[0.3em] text-xs font-black">
+          Synchronizing Neural Matrix...
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
     if (showLanding) {
       return (
@@ -2156,6 +2226,23 @@ function App() {
               </div>
 
               <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-4">
+                  <button 
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="w-full py-3 bg-white text-black font-black rounded-xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all"
+                  >
+                    <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
+                    Login with Google
+                  </button>
+                  
+                  <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-zinc-800"></div>
+                    <span className="flex-shrink mx-4 text-[9px] text-zinc-600 uppercase font-black tracking-widest">OR</span>
+                    <div className="flex-grow border-t border-zinc-800"></div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[9px] text-zinc-500 uppercase font-black">{loginMode === 'ADMIN' ? 'Architect Email' : 'Member Email'}</label>
                   <input 
@@ -2163,7 +2250,7 @@ function App() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
-                    placeholder="mycanvas@utubemail.com"
+                    placeholder="push2playlive@gmail.com"
                     required
                   />
                 </div>

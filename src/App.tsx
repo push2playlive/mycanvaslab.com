@@ -1139,7 +1139,7 @@ function App() {
 
   const renderHomeView = () => (
     <div className="flex-1 flex flex-col bg-[#010101] p-8 overflow-y-auto custom-scrollbar">
-      <div className="max-w-5xl mx-auto w-full space-y-12 pb-32">
+      <div className="max-w-5xl mx-auto w-full space-y-12 pb-10">
         <div className="space-y-4">
           <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Welcome, Architect</h2>
           <p className="text-zinc-500 text-lg font-medium">Your V12 Neural Command Center is fully operational.</p>
@@ -1197,7 +1197,7 @@ function App() {
         ))}
       </div>
 
-      <div className="p-8 max-w-5xl mx-auto w-full space-y-12 pb-32">
+      <div className="p-8 max-w-5xl mx-auto w-full space-y-12 pb-10">
         {statsSubTab === 'METRICS' ? (
           <div className="space-y-12">
             <div className="grid grid-cols-3 gap-6">
@@ -1302,7 +1302,7 @@ function App() {
         ))}
       </div>
 
-      <div className="p-8 max-w-5xl mx-auto w-full space-y-8 pb-32">
+      <div className="p-8 max-w-5xl mx-auto w-full space-y-8 pb-10">
         {filesSubTab === 'FOLDERS' ? (
           <div className="grid grid-cols-4 gap-4">
             {['Core_Logic.js', 'System_Assets.zip', 'Neural_Weights.bin', 'UI_Kit_V12.fig'].map((file, i) => (
@@ -1958,7 +1958,7 @@ function App() {
 
   const renderPricingView = () => (
     <div className="flex-1 flex flex-col bg-[#010101] p-8 overflow-y-auto custom-scrollbar">
-      <div className="max-w-5xl mx-auto w-full space-y-12 pb-32">
+      <div className="max-w-5xl mx-auto w-full space-y-12 pb-10">
         <div className="space-y-4 text-center">
           <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">The Elite Matrix</h2>
           <p className="text-zinc-500 text-lg font-medium">Scale your neural operations with V12 performance.</p>
@@ -2399,17 +2399,22 @@ function App() {
       {renderAiFeaturesModal()}
       {renderContactModal()}
       
-      {/* HAMBURGER MENU: Only visible on desktop to toggle sidebar */}
+      {/* HAMBURGER MENU: Visible on all screens to toggle sidebar */}
       <button 
         onClick={() => setShowSidebar(!showSidebar)}
-        className="hidden lg:flex fixed top-6 left-6 z-50 p-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-xl text-orange-500 hover:border-orange-500/50 transition-all"
+        className="flex fixed top-6 left-6 z-50 p-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-xl text-orange-500 hover:border-orange-500/50 transition-all"
       >
         <Menu className="w-5 h-5" />
       </button>
 
       {/* SIDEBAR: The Command Center */}
-      <div className={`hidden lg:flex flex-col border-r border-[#181818] p-6 bg-[#050505] z-30 transition-all duration-300 ${showSidebar ? 'w-[420px]' : 'w-0 p-0 border-none overflow-hidden'}`}>
-        <h1 className="text-[#ea580c] text-2xl font-black mb-8 flex items-center gap-3 whitespace-nowrap">💎 MYCANVASLAB</h1>
+      <div className={`fixed lg:relative flex flex-col border-r border-[#181818] p-6 bg-[#050505] z-40 transition-all duration-300 h-full ${showSidebar ? 'translate-x-0 w-full lg:w-[420px]' : '-translate-x-full lg:translate-x-0 lg:w-0 p-0 border-none overflow-hidden'}`}>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-[#ea580c] text-2xl font-black flex items-center gap-3 whitespace-nowrap">💎 MYCANVASLAB</h1>
+          <button onClick={() => setShowSidebar(false)} className="lg:hidden p-2 text-zinc-500 hover:text-white">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
         {/* THE LOW FUEL WARNING BANNER */}
         {credits < 500 && (
@@ -2602,9 +2607,23 @@ function App() {
              <p className="text-[9px] text-zinc-600 mt-2 font-medium leading-relaxed">Custom neural workflows for automated execution.</p>
           </div>
         </div>
+      </div>
 
-        {/* Input Dock (Sticky at bottom) */}
-        <div className="bg-[#080808] p-5 rounded-3xl border border-[#181818] mt-4 space-y-4">
+      {/* THE CANVAS / MAIN VIEW */}
+      <div className="flex-1 flex flex-col relative overflow-hidden h-full">
+        <div className="flex-1 overflow-y-auto custom-scrollbar pb-40 lg:pb-24">
+          {view === 'CREATOR' && renderCreatorView()}
+          {view === 'MARKETING' && renderMarketingView()}
+          {view === 'PRICING' && renderPricingView()}
+          {view === 'HOME' && renderHomeView()}
+          {view === 'STATS' && renderStatsView()}
+          {view === 'FILES' && renderFilesView()}
+          {view === 'MAIL' && renderMailView()}
+          {view === 'SETTINGS' && renderSettingsView()}
+        </div>
+
+        {/* Input Dock (Sticky at bottom of main view) */}
+        <div className="bg-[#080808] p-4 lg:p-5 border-t border-[#181818] z-20">
           {/* AI Feature Chips from Image */}
           <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 no-scrollbar">
             <button 
@@ -2632,7 +2651,7 @@ function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); executeMission(); }}}
-            className="w-full h-24 bg-transparent text-sm outline-none resize-none placeholder-zinc-800 text-zinc-300 font-medium" 
+            className="w-full h-20 lg:h-24 bg-transparent text-sm outline-none resize-none placeholder-zinc-800 text-zinc-300 font-medium" 
             placeholder="Make changes, add new features, ask for anything" 
           />
 
@@ -2685,18 +2704,8 @@ function App() {
         </div>
       </div>
 
-      {/* THE CANVAS / MAIN VIEW */}
-      {view === 'CREATOR' && renderCreatorView()}
-      {view === 'MARKETING' && renderMarketingView()}
-      {view === 'PRICING' && renderPricingView()}
-      {view === 'HOME' && renderHomeView()}
-      {view === 'STATS' && renderStatsView()}
-      {view === 'FILES' && renderFilesView()}
-      {view === 'MAIL' && renderMailView()}
-      {view === 'SETTINGS' && renderSettingsView()}
-
       {/* FLOATING NAV */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 px-10 py-3 bg-[#080808]/90 backdrop-blur-2xl border border-orange-500/10 rounded-full flex items-center gap-10 z-30 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+      <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 px-4 sm:px-10 py-3 bg-[#080808]/90 backdrop-blur-2xl border border-orange-500/10 rounded-full flex items-center gap-3 sm:gap-10 z-50 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-[95vw] overflow-x-auto no-scrollbar">
         <button 
           onClick={() => setView('HOME')}
           className={`transition-all duration-300 ${view === 'HOME' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, db } from './firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged } from './firebase';
 import { 
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
@@ -384,27 +383,8 @@ function App() {
         setUser(firebaseUser);
         setIsLoggedIn(true);
         
-        // Sync user to Firestore
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-          const role = firebaseUser.email === 'push2playlive@gmail.com' ? 'admin' : 'member';
-          await setDoc(userRef, {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            role: role,
-            createdAt: serverTimestamp()
-          });
-          if (role === 'admin') setLoginMode('ADMIN');
-          else setLoginMode('MEMBER');
-        } else {
-          const userData = userSnap.data();
-          if (userData.role === 'admin') setLoginMode('ADMIN');
-          else setLoginMode('MEMBER');
-        }
+        const role = firebaseUser.email === 'push2playlive@gmail.com' ? 'ADMIN' : 'MEMBER';
+        setLoginMode(role);
         
         setTerminal(prev => prev + `\n\n[System]: Neural Link Established. Welcome, ${firebaseUser.displayName || 'Architect'}.`);
       } else {

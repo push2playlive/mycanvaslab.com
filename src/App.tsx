@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged } from './firebase';
 import { 
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
@@ -217,6 +217,9 @@ function App() {
   const [userPlan, setUserPlan] = useState('GURU ELITE');
   const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL'>('CREATOR');
   const [galleryItems, setGalleryItems] = useState(MOCK_GALLERY);
+  const [gallerySearch, setGallerySearch] = useState('');
+  const [galleryTypeFilter, setGalleryTypeFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO'>('ALL');
+  const [previewItem, setPreviewItem] = useState<any | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,6 +256,8 @@ function App() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<any>({
     facebook: true, instagram: true, tiktok: false, youtube: false
   });
+  const [adVariations, setAdVariations] = useState<{headline: string, body: string, cta: string}[]>([]);
+  const [isGeneratingCopy, setIsGeneratingCopy] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [creatorSubTab, setCreatorSubTab] = useState<'MISSION CONTROL' | 'PUBLISH / BASH'>('MISSION CONTROL');
@@ -307,6 +312,7 @@ function App() {
   ];
 
   const [agents, setAgents] = useState([
+    { name: "Gatekeeper_Engine_v1", visibility: "PRIVATE", fee: "0.15 / req", status: "RUNNING" },
     { name: "Market_Analyzer_v1", visibility: "PRIVATE", fee: "0.05 / req", status: "RUNNING" },
     { name: "Code_Architect_v4", visibility: "PUBLIC", fee: "0.12 / req", status: "RUNNING" },
     { name: "Social_Bot_Alpha", visibility: "PRIVATE", fee: "0.02 / req", status: "STOPPED" },
@@ -373,7 +379,11 @@ function App() {
     setAgents(prev => prev.map(agent => 
       agent.name === agentName ? { ...agent, visibility: 'PUBLIC' as const } : agent
     ));
-    setTerminal(prev => prev + `\n[System]: Mobilizing ${agentName}... Status: PUBLIC_BASH_READY.`);
+    if (agentName === "Gatekeeper_Engine_v1") {
+      setTerminal(prev => prev + `\n[System]: Mobilizing ${agentName}...\n[System]: INITIATING_GATEKEEPER_PROTOCOLS...\n[System]: FIREBASE_AUTH_SYNC: OK\n[System]: STRIPE_CRYPTO_API: READY\n[System]: Status: PUBLIC_BASH_READY.`);
+    } else {
+      setTerminal(prev => prev + `\n[System]: Mobilizing ${agentName}... Status: PUBLIC_BASH_READY.`);
+    }
     setTimeout(scrollToBottom, 100);
   };
 
@@ -563,6 +573,52 @@ function App() {
 
   const handlePushToGit = () => {
     setTerminal(prev => prev + `\n\n[System]: INITIATING_GIT_SYNC...\n[System]: PUSHING_TO_HETZNER_V12_MAINFRAME...\n[System]: GIT_SYNC_COMPLETE.`);
+  };
+
+  const generateAdCopy = async () => {
+    if (!keywords) {
+      setTerminal(prev => prev + `\n\n[System]: Error - Please provide keywords or product description for the ad generator.`);
+      return;
+    }
+
+    setIsGeneratingCopy(true);
+    setTerminal(prev => prev + `\n\n[System]: INITIATING_NEURAL_COPY_GENERATOR...\n[System]: ANALYZING_KEYWORDS: ${keywords}...`);
+
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Generate 3 high-converting social media ad copy variations for a product with these keywords: ${keywords}. Each variation should include a headline, body text, and a call to action.`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                headline: { type: Type.STRING },
+                body: { type: Type.STRING },
+                cta: { type: Type.STRING }
+              },
+              required: ["headline", "body", "cta"]
+            }
+          }
+        }
+      });
+
+      if (response.text) {
+        const variations = JSON.parse(response.text);
+        setAdVariations(variations);
+        setTerminal(prev => prev + `\n[System]: NEURAL_COPY_GENERATED_SUCCESSFULLY. 3_VARIATIONS_READY.`);
+      }
+    } catch (error: any) {
+      setTerminal(prev => prev + `\n\n[System]: Error - Neural Copy Generation failed: ${error.message}`);
+    } finally {
+      setIsGeneratingCopy(false);
+    }
   };
 
   const renderCreatorView = () => (
@@ -909,7 +965,17 @@ function App() {
                   </div>
 
                   <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
-                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Post Copy & Links</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Post Copy & Links</h3>
+                      <button 
+                        onClick={generateAdCopy}
+                        disabled={isGeneratingCopy || !keywords}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 border border-orange-500/30 text-orange-500 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-black transition-all disabled:opacity-50"
+                      >
+                        {isGeneratingCopy ? <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div> : <Sparkles size={12} />}
+                        Generate Neural Copy
+                      </button>
+                    </div>
                     <textarea
                       rows={5}
                       placeholder="Write your amazing ad copy here... Don't forget to drop your link!"
@@ -917,6 +983,32 @@ function App() {
                       onChange={(e) => setAdCopy(e.target.value)}
                       className="w-full p-4 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none resize-none text-zinc-300 text-sm"
                     ></textarea>
+
+                    {adVariations.length > 0 && (
+                      <div className="mt-6 space-y-4">
+                        <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">Neural Variations</h4>
+                        <div className="grid grid-cols-1 gap-4">
+                          {adVariations.map((v, i) => (
+                            <div key={i} className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl space-y-3 group hover:border-orange-500/30 transition-all">
+                              <div className="flex justify-between items-start">
+                                <h5 className="text-xs font-black text-white uppercase tracking-tight">{v.headline}</h5>
+                                <button 
+                                  onClick={() => setAdCopy(`${v.headline}\n\n${v.body}\n\n${v.cta}`)}
+                                  className="px-2 py-1 bg-orange-500/10 text-orange-500 text-[8px] font-black uppercase rounded border border-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  Apply
+                                </button>
+                              </div>
+                              <p className="text-[11px] text-zinc-400 leading-relaxed">{v.body}</p>
+                              <div className="flex items-center gap-2 text-[9px] font-bold text-orange-500 uppercase">
+                                <TrendingUp size={10} />
+                                {v.cta}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
@@ -1020,8 +1112,11 @@ function App() {
 
           {marketingTab === 'gallery' && (
             <div className="max-w-6xl mx-auto space-y-6">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Media Library</h2>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Media Library</h2>
+                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-1">Manage your tactical assets</p>
+                </div>
                 <div className="flex items-center gap-4">
                   <input type="file" ref={galleryInputRef} className="hidden" onChange={handleGalleryUpload} accept="image/*,video/*" />
                   <button 
@@ -1033,31 +1128,137 @@ function App() {
                   </button>
                 </div>
               </div>
+
+              {/* SEARCH & FILTER BAR */}
+              <div className="flex flex-col sm:flex-row gap-4 bg-[#050505] p-4 rounded-2xl border border-zinc-900">
+                <div className="flex-1 relative">
+                  <Radar className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="SEARCH_ASSETS..."
+                    value={gallerySearch}
+                    onChange={(e) => setGallerySearch(e.target.value)}
+                    className="w-full bg-black/40 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-[11px] font-bold text-zinc-300 focus:border-orange-500/50 outline-none transition-all placeholder:text-zinc-700"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  {['ALL', 'IMAGE', 'VIDEO'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setGalleryTypeFilter(type as any)}
+                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                        galleryTypeFilter === type 
+                          ? 'border-orange-500 text-orange-500 bg-orange-500/10' 
+                          : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {galleryItems.map(item => (
-                  <div key={item.id} className="bg-[#050505] rounded-2xl overflow-hidden border border-zinc-900 group relative">
-                    <div className="relative h-48 border-b border-zinc-900">
-                      <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
-                      <div className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-lg backdrop-blur-sm border border-white/10">
-                        {item.type === 'video' ? <Video size={14} /> : <Image size={14} />}
+                {galleryItems
+                  .filter(item => {
+                    const matchesSearch = item.title.toLowerCase().includes(gallerySearch.toLowerCase());
+                    const matchesType = galleryTypeFilter === 'ALL' || item.type.toUpperCase() === galleryTypeFilter;
+                    return matchesSearch && matchesType;
+                  })
+                  .map(item => (
+                    <div key={item.id} className="bg-[#050505] rounded-2xl overflow-hidden border border-zinc-900 group relative">
+                      <div className="relative h-48 border-b border-zinc-900 cursor-pointer" onClick={() => setPreviewItem(item)}>
+                        <img src={item.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-lg backdrop-blur-sm border border-white/10">
+                          {item.type === 'video' ? <Video size={14} /> : <Image size={14} />}
+                        </div>
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Eye size={24} className="text-white" />
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-white truncate text-sm">{item.title}</h3>
+                        <p className="text-[9px] text-zinc-600 mt-1 font-black uppercase tracking-widest">Added 2 days ago</p>
+                      </div>
+                      
+                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handlePromoteFromGallery(item)}
+                          className="w-full py-2 bg-orange-500 text-black font-black uppercase text-[9px] tracking-widest rounded-lg flex items-center justify-center gap-2 hover:bg-orange-400 transition-all"
+                        >
+                          <Megaphone size={14} />
+                          Promote
+                        </button>
                       </div>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-white truncate text-sm">{item.title}</h3>
-                      <p className="text-[9px] text-zinc-600 mt-1 font-black uppercase tracking-widest">Added 2 days ago</p>
-                    </div>
-                    
-                    <div className="absolute inset-0 bg-orange-500/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4 backdrop-blur-sm">
-                      <button 
-                        onClick={() => handlePromoteFromGallery(item)}
-                        className="w-full py-3 bg-black text-orange-500 font-black uppercase text-[10px] tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-900 transform translate-y-4 group-hover:translate-y-0 transition-all shadow-2xl"
-                      >
-                        <Megaphone size={16} />
-                        Promote this item
-                      </button>
+                  ))}
+              </div>
+
+              {/* EMPTY STATE */}
+              {galleryItems.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(gallerySearch.toLowerCase());
+                const matchesType = galleryTypeFilter === 'ALL' || item.type.toUpperCase() === galleryTypeFilter;
+                return matchesSearch && matchesType;
+              }).length === 0 && (
+                <div className="py-20 text-center border-2 border-dashed border-zinc-900 rounded-3xl">
+                  <Radar size={48} className="mx-auto text-zinc-800 mb-4 animate-pulse" />
+                  <h3 className="text-zinc-500 font-black uppercase tracking-widest">No assets detected</h3>
+                  <p className="text-zinc-700 text-[10px] mt-2 font-medium">Adjust your filters or upload new intel.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* MEDIA PREVIEW MODAL */}
+          {previewItem && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-10">
+              <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setPreviewItem(null)}></div>
+              <div className="relative w-full max-w-5xl bg-[#050505] border border-zinc-800 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col md:flex-row">
+                <button 
+                  onClick={() => setPreviewItem(null)}
+                  className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-orange-500 transition-all"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="flex-1 bg-black flex items-center justify-center min-h-[300px]">
+                  {previewItem.type === 'video' ? (
+                    <video src={previewItem.url} controls autoPlay className="max-w-full max-h-[70vh]" />
+                  ) : (
+                    <img src={previewItem.url} alt={previewItem.title} className="max-w-full max-h-[70vh] object-contain" />
+                  )}
+                </div>
+
+                <div className="w-full md:w-80 p-8 border-t md:border-t-0 md:border-l border-zinc-900 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-white tracking-tighter uppercase">{previewItem.title}</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[8px] font-black text-zinc-500 uppercase tracking-widest">
+                        {previewItem.type}
+                      </span>
+                      <span className="text-[9px] text-zinc-700 font-bold uppercase tracking-widest">ID: {previewItem.id}</span>
                     </div>
                   </div>
-                ))}
+
+                  <div className="space-y-4">
+                    <button 
+                      onClick={() => {
+                        handlePromoteFromGallery(previewItem);
+                        setPreviewItem(null);
+                      }}
+                      className="w-full py-4 bg-orange-500 text-black font-black uppercase text-[10px] tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)]"
+                    >
+                      <Megaphone size={16} />
+                      Promote Now
+                    </button>
+                    <button 
+                      onClick={() => setPreviewItem(null)}
+                      className="w-full py-4 bg-zinc-900 text-zinc-500 font-black uppercase text-[10px] tracking-[0.2em] rounded-xl border border-zinc-800 hover:text-white hover:border-zinc-700 transition-all"
+                    >
+                      Close Preview
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1285,9 +1486,11 @@ function App() {
       <div className="p-8 max-w-5xl mx-auto w-full space-y-8 pb-10">
         {filesSubTab === 'FOLDERS' ? (
           <div className="grid grid-cols-4 gap-4">
-            {['Core_Logic.js', 'System_Assets.zip', 'Neural_Weights.bin', 'UI_Kit_V12.fig'].map((file, i) => (
+            {['gatekeeper.py', 'Core_Logic.js', 'System_Assets.zip', 'Neural_Weights.bin', 'UI_Kit_V12.fig'].map((file, i) => (
               <div key={i} className="bg-[#050505] border border-zinc-900 rounded-xl p-4 flex flex-col items-center gap-3 group hover:border-orange-500/30 transition-all cursor-pointer">
-                <Folder className="w-10 h-10 text-zinc-800 group-hover:text-orange-500/50 transition-colors" />
+                <div className="w-10 h-10 flex items-center justify-center">
+                  {file.endsWith('.py') ? <Code className="w-8 h-8 text-blue-500/50 group-hover:text-blue-400 transition-colors" /> : <Folder className="w-10 h-10 text-zinc-800 group-hover:text-orange-500/50 transition-colors" />}
+                </div>
                 <span className="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-300">{file}</span>
               </div>
             ))}
@@ -2375,7 +2578,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-[#020202] text-white font-mono overflow-hidden text-[13px]">
+    <div className="flex h-screen w-screen bg-[#020202] text-white font-mono overflow-hidden text-[13px] nexus-grid-bg">
       {renderAiFeaturesModal()}
       {renderContactModal()}
       
@@ -2388,9 +2591,12 @@ function App() {
       </button>
 
       {/* SIDEBAR: The Command Center */}
-      <div className={`fixed lg:relative flex flex-col border-r border-[#181818] p-6 bg-[#050505] z-40 transition-all duration-300 h-full ${showSidebar ? 'translate-x-0 w-full lg:w-[420px]' : '-translate-x-full lg:translate-x-0 lg:w-0 p-0 border-none overflow-hidden'}`}>
+      <aside className={`sidebar-container fixed lg:relative flex flex-col border-r border-[#181818] p-6 bg-[#050505] z-40 transition-all duration-300 h-full overflow-y-auto custom-scrollbar ${showSidebar ? 'translate-x-0 w-full lg:w-[420px]' : '-translate-x-full lg:translate-x-0 lg:w-0 p-0 border-none overflow-hidden'}`}>
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-[#ea580c] text-2xl font-black flex items-center gap-3 whitespace-nowrap">💎 MYCANVASLAB</h1>
+          <div className="flex items-center">
+            <span className="status-led"></span>
+            <h1 className="text-[#ea580c] text-2xl font-black flex items-center gap-3 whitespace-nowrap">💎 MYCANVASLAB</h1>
+          </div>
           <button onClick={() => setShowSidebar(false)} className="lg:hidden p-2 text-zinc-500 hover:text-white">
             <X className="w-6 h-6" />
           </button>
@@ -2587,10 +2793,10 @@ function App() {
              <p className="text-[9px] text-zinc-600 mt-2 font-medium leading-relaxed">Custom neural workflows for automated execution.</p>
           </div>
         </div>
-      </div>
+      </aside>
 
       {/* THE CANVAS / MAIN VIEW */}
-      <div className="flex-1 flex flex-col relative overflow-hidden h-full">
+      <main className="flex-1 h-screen overflow-hidden flex flex-col relative custom-scrollbar">
         <div className="flex-1 overflow-y-auto custom-scrollbar pb-40 lg:pb-24">
           {view === 'CREATOR' && renderCreatorView()}
           {view === 'MARKETING' && renderMarketingView()}
@@ -2682,7 +2888,7 @@ function App() {
              </button>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* FLOATING NAV */}
       <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 px-4 sm:px-10 py-3 bg-[#080808]/90 backdrop-blur-2xl border border-orange-500/10 rounded-full flex items-center gap-3 sm:gap-10 z-50 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-[95vw] overflow-x-auto no-scrollbar">

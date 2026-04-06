@@ -59,3 +59,23 @@ aside, .sidebar-container {
   content: attr(title);
   display: none; /* Accessible to screen readers and Alt-Tags */
 }
+
+/* The Lab Blueprint Grid */
+.nexus-grid-bg {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(51, 255, 51, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 255, 51, 0.05) 1px, transparent 1px);
+  background-attachment: fixed;
+}
+
+/* A glowing "Power" indicator for the corner */
+.status-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #33ff33;
+  box-shadow: 0 0 10px #33ff33;
+  display: inline-block;
+  margin-right: 8px;
+}

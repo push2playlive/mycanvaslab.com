@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase';
 import { GoogleGenAI, Type } from "@google/genai";
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged } from './firebase';
 import { 
@@ -8,7 +10,7 @@ import {
   Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff, Mail,
   Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
   Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon,
-  FileText
+  FileText, Calendar, Clock, Activity
 } from "lucide-react";
 
 // STYLES: Tactical Glassmorphism
@@ -42,10 +44,10 @@ const SidebarButton = ({ label, icon, isActive, onClick }: { label: string, icon
 );
 
 const MOCK_GALLERY = [
-  { id: 1, type: 'image', url: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80', title: 'New Product Launch' },
-  { id: 2, type: 'image', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80', title: 'Behind the Scenes' },
-  { id: 3, type: 'video', url: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=400&q=80', title: 'Customer Testimonial' },
-  { id: 4, type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&q=80', title: 'Office Setup' },
+  { id: 1, type: 'image', url: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80', title: 'New Product Launch', date: '2026-04-01T10:00:00Z', size: 1024 * 500 }, // 500KB
+  { id: 2, type: 'image', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80', title: 'Behind the Scenes', date: '2026-04-02T14:30:00Z', size: 1024 * 800 }, // 800KB
+  { id: 3, type: 'video', url: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=400&q=80', title: 'Customer Testimonial', date: '2026-04-05T09:15:00Z', size: 1024 * 1024 * 5 }, // 5MB
+  { id: 4, type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&q=80', title: 'Office Setup', date: '2026-04-07T16:45:00Z', size: 1024 * 300 }, // 300KB
 ];
 
 const PLATFORMS = [
@@ -219,6 +221,10 @@ function App() {
   const [galleryItems, setGalleryItems] = useState(MOCK_GALLERY);
   const [gallerySearch, setGallerySearch] = useState('');
   const [galleryTypeFilter, setGalleryTypeFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO'>('ALL');
+  const [gallerySortBy, setGallerySortBy] = useState<'name' | 'date' | 'size'>('date');
+  const [gallerySortOrder, setGallerySortOrder] = useState<'asc' | 'desc'>('desc');
+  const [galleryDateFilter, setGalleryDateFilter] = useState<string>('ALL');
+  const [gallerySizeFilter, setGallerySizeFilter] = useState<string>('ALL');
   const [previewItem, setPreviewItem] = useState<any | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -233,7 +239,9 @@ function App() {
         id: Date.now(),
         title: file.name,
         url,
-        type: file.type.startsWith('video') ? 'video' : 'image'
+        type: file.type.startsWith('video') ? 'video' : 'image',
+        date: new Date().toISOString(),
+        size: file.size
       };
       setGalleryItems(prev => [newItem, ...prev]);
       setTerminal(prev => prev + `\n\n[System]: Asset "${file.name}" added to Media Library.`);
@@ -312,12 +320,21 @@ function App() {
   ];
 
   const [agents, setAgents] = useState([
-    { name: "Gatekeeper_Engine_v1", visibility: "PRIVATE", fee: "0.15 / req", status: "RUNNING" },
-    { name: "Market_Analyzer_v1", visibility: "PRIVATE", fee: "0.05 / req", status: "RUNNING" },
-    { name: "Code_Architect_v4", visibility: "PUBLIC", fee: "0.12 / req", status: "RUNNING" },
-    { name: "Social_Bot_Alpha", visibility: "PRIVATE", fee: "0.02 / req", status: "STOPPED" },
-    { name: "Neural_Net_Beta", visibility: "PRIVATE", fee: "0.08 / req", status: "ERROR" }
+    { name: "Gatekeeper_Engine_v1", visibility: "PRIVATE", fee: "0.15 / req", status: "RUNNING", schedule: "DAILY" },
+    { name: "Market_Analyzer_v1", visibility: "PRIVATE", fee: "0.05 / req", status: "RUNNING", schedule: "NONE" },
+    { name: "Code_Architect_v4", visibility: "PUBLIC", fee: "0.12 / req", status: "RUNNING", schedule: "WEEKLY" },
+    { name: "Social_Bot_Alpha", visibility: "PRIVATE", fee: "0.02 / req", status: "STOPPED", schedule: "NONE" },
+    { name: "Neural_Net_Beta", visibility: "PRIVATE", fee: "0.08 / req", status: "ERROR", schedule: "NONE" }
   ]);
+  const [schedulingAgent, setSchedulingAgent] = useState<string | null>(null);
+  const [customCron, setCustomCron] = useState("");
+  const [isCustomCron, setIsCustomCron] = useState(false);
+  const [targetDomain, setTargetDomain] = useState('canva.com');
+  const [marketLeads, setMarketLeads] = useState<any[]>([
+    { id: 1, text: "Canva is too slow for my video edits, looking for alternatives.", source: "https://reddit.com/r/design", timestamp: new Date().toISOString() },
+    { id: 2, text: "Is there a way to automate my YouTube chat with AI?", source: "https://twitter.com/search?q=youtube+chat", timestamp: new Date().toISOString() }
+  ]);
+  const [isDeployingDispatcher, setIsDeployingDispatcher] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{ data: string, mimeType: string, name: string } | null>(null);
 
@@ -645,18 +662,6 @@ function App() {
                );
              })}
            </div>
-           <div className="w-px h-4 bg-zinc-800 mx-2"></div>
-           <div className="flex bg-black/50 p-1 rounded-lg border border-zinc-800">
-             {['PREVIEW', 'CODE'].map(v => (
-               <button 
-                 key={v} 
-                 onClick={() => setActiveTab(v)} 
-                 className={`px-5 py-1 rounded-md text-[10px] font-bold tracking-widest transition-all ${activeTab === v ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
-               >
-                 {v}
-               </button>
-             ))}
-           </div>
         </div>
 
         <div className="flex items-center gap-6">
@@ -684,108 +689,233 @@ function App() {
         </div>
       </div>
 
-      {/* STAGE */}
-      <div className="flex-1 overflow-hidden p-8 flex flex-col relative">
-        {creatorSubTab === 'MISSION CONTROL' ? (
-          <div className="w-full h-full bg-[#050505] border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-             {activeTab === 'PREVIEW' ? (
-               <div className="flex-1 p-8 overflow-y-auto custom-scrollbar text-orange-500 whitespace-pre-wrap relative">
-                 {isLoading && (
-                   <div className="absolute inset-0 z-10 p-4">
-                     <PreviewLoading />
-                   </div>
-                 )}
-                 {terminal}
-                 <div ref={terminalEndRef} />
-               </div>
-             ) : (
-               <div className="flex-1 p-8 flex items-center justify-center">
-                 <p className="text-zinc-800 text-4xl font-black uppercase tracking-tighter select-none">Stage Operational</p>
-               </div>
-             )}
-          </div>
-        ) : (
-          <div className="max-w-2xl mx-auto w-full mt-12 space-y-8">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Command Bridge</h2>
-              <p className="text-zinc-600 text-sm">The definitive Architect’s Bridge for Sovereign Dispatch.</p>
-            </div>
-            
-            <div className="p-8 bg-[#080808] border border-orange-500/20 rounded-3xl backdrop-blur-xl space-y-8">
-              <div className="flex justify-between items-center">
-                <h3 className="text-orange-500 text-[10px] font-black uppercase tracking-widest">Sovereign Dispatch</h3>
-                <span className={`text-[9px] font-bold ${dispatchStatus === 'BASHING_UP...' ? 'text-orange-400 animate-pulse' : 'text-zinc-600'}`}>
-                  {dispatchStatus}
-                </span>
-              </div>
-
-              <div className="flex gap-4">
-                {/* STEP 1: SEND TO GITHUB */}
-                <button 
-                  onClick={() => {
-                    setDispatchStatus('STAGED_FOR_DISPATCH');
-                    setTerminal(prev => prev + `\n[System]: Assets staged for dispatch. Ready for Bash.`);
-                  }}
-                  className="flex-1 py-4 bg-zinc-900 border border-zinc-800 rounded-xl text-[10px] font-bold text-zinc-400 hover:border-orange-500/50 transition-all flex items-center justify-center gap-2"
-                >
-                  <Code className="w-3.5 h-3.5" />
-                  1. STAGE TO GIT
-                </button>
-
-                {/* STEP 2: BASH UP (THE PUSH) */}
-                <button 
-                  onClick={handlePublish}
-                  disabled={dispatchStatus === 'BASHING_UP...' || dispatchStatus === 'RETRACTING...'}
-                  className="flex-1 py-4 bg-[#ea580c] text-black rounded-xl text-[10px] font-black uppercase shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Zap className={`w-3.5 h-3.5 fill-black ${dispatchStatus === 'BASHING_UP...' ? 'animate-pulse' : ''}`} />
-                  {dispatchStatus === 'BASHING_UP...' ? '🔨 BASHING...' : '2. BASH UP NOW'}
-                </button>
-              </div>
-
-              {dispatchStatus === 'DISPATCH_SUCCESSFUL. MISSION_COMPLETE.' && (
-                <button 
-                  onClick={handleRetract}
-                  className="w-full py-4 bg-zinc-900 border border-red-500/30 text-red-500 rounded-xl text-[10px] font-black uppercase hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
-                >
-                  <ShieldOff className="w-3.5 h-3.5" />
-                  UNPUBLISH / RETRACT MISSION
-                </button>
-              )}
-
-              <div className="h-px bg-zinc-900"></div>
-
-              <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-zinc-800">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase">Visibility Target</span>
-                  <p className="text-[9px] text-zinc-600 uppercase">{isPublic ? 'Public GitHub' : 'Private Vault'}</p>
+      <div className="flex-1 flex overflow-hidden">
+        {/* MIDDLE COLUMN: MISSION CONTROL / PUBLISH UI */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-8 border-r border-zinc-900">
+          {creatorSubTab === 'MISSION CONTROL' ? (
+              <div className="max-w-3xl mx-auto space-y-12">
+                {/* AGENT STATUS */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Cpu className="text-orange-500" size={20} />
+                      <span className="text-[8px] font-black text-orange-500 uppercase px-2 py-0.5 bg-orange-500/10 rounded-full animate-pulse">Active</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Neural Agent</p>
+                      <p className="text-lg font-black text-white uppercase tracking-tighter">V12_CORE</p>
+                    </div>
+                  </div>
+                  <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Activity className="text-zinc-600" size={20} />
+                      <span className="text-[8px] font-black text-zinc-600 uppercase px-2 py-0.5 bg-zinc-900 rounded-full">98.4%</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Sync Rate</p>
+                      <p className="text-lg font-black text-white uppercase tracking-tighter">Optimal</p>
+                    </div>
+                  </div>
+                  <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Shield className="text-zinc-600" size={20} />
+                      <span className="text-[8px] font-black text-zinc-600 uppercase px-2 py-0.5 bg-zinc-900 rounded-full">Secure</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Encryption</p>
+                      <p className="text-lg font-black text-white uppercase tracking-tighter">AES-256</p>
+                    </div>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => setIsPublic(!isPublic)}
-                  className={`px-6 py-2 rounded-full text-[10px] font-black transition-all ${isPublic ? 'bg-orange-500 text-black shadow-[0_0_15px_#ea580c]' : 'bg-zinc-800 text-zinc-600'}`}
-                >
-                  {isPublic ? 'PUBLIC' : 'PRIVATE'}
-                </button>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-2">
-                <Github className="w-5 h-5 text-zinc-600" />
-                <p className="text-[10px] font-bold text-white uppercase">GitHub Sync</p>
-                <p className="text-[9px] text-zinc-700">Auto-push to main branch enabled.</p>
+                {/* SYSTEM METRICS */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">System Telemetry</h3>
+                    <div className="flex gap-2">
+                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+                      <div className="w-2 h-2 rounded-full bg-orange-500" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Neural Processing', value: 74, color: 'bg-orange-500' },
+                      { label: 'Memory Allocation', value: 42, color: 'bg-zinc-700' },
+                      { label: 'Network Throughput', value: 89, color: 'bg-zinc-800' }
+                    ].map((metric) => (
+                      <div key={metric.label} className="space-y-2">
+                        <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                          <span className="text-zinc-500">{metric.label}</span>
+                          <span className="text-zinc-300">{metric.value}%</span>
+                        </div>
+                        <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${metric.color} transition-all duration-1000`} 
+                            style={{ width: `${metric.value}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-2">
-                <Database className="w-5 h-5 text-zinc-600" />
-                <p className="text-[10px] font-bold text-white uppercase">Supabase Backup</p>
-                <p className="text-[9px] text-zinc-700">Real-time DB snapshots active.</p>
+          ) : (
+            <div className="max-w-2xl mx-auto w-full mt-12 space-y-8">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Command Bridge V12</h2>
+                <p className="text-zinc-600 text-sm">The definitive Architect’s Bridge for Sovereign Dispatch.</p>
+              </div>
+              
+              <div className="p-8 bg-[#080808] border border-orange-500/20 rounded-3xl backdrop-blur-xl space-y-8">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-orange-500 text-[10px] font-black uppercase tracking-widest">Sovereign Dispatch</h3>
+                  <span className={`text-[9px] font-bold ${dispatchStatus === 'BASHING_UP...' ? 'text-orange-400 animate-pulse' : 'text-zinc-600'}`}>
+                    {dispatchStatus}
+                  </span>
+                </div>
+
+                <div className="flex gap-4">
+                  {/* STEP 1: SEND TO GITHUB */}
+                  <button 
+                    onClick={() => {
+                      setDispatchStatus('STAGED_FOR_DISPATCH');
+                      setTerminal(prev => prev + `\n[System]: Assets staged for dispatch. Ready for Bash.`);
+                    }}
+                    className="flex-1 py-4 bg-zinc-900 border border-zinc-800 rounded-xl text-[10px] font-bold text-zinc-400 hover:border-orange-500/50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Code className="w-3.5 h-3.5" />
+                    1. STAGE TO GIT
+                  </button>
+
+                  {/* STEP 2: BASH UP (THE PUSH) */}
+                  <button 
+                    onClick={handlePublish}
+                    disabled={dispatchStatus === 'BASHING_UP...' || dispatchStatus === 'RETRACTING...'}
+                    className="flex-1 py-4 bg-[#ea580c] text-black rounded-xl text-[10px] font-black uppercase shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Zap className={`w-3.5 h-3.5 fill-black ${dispatchStatus === 'BASHING_UP...' ? 'animate-pulse' : ''}`} />
+                    {dispatchStatus === 'BASHING_UP...' ? '🔨 BASHING...' : '2. BASH UP NOW'}
+                  </button>
+                </div>
+
+                {dispatchStatus === 'DISPATCH_SUCCESSFUL. MISSION_COMPLETE.' && (
+                  <button 
+                    onClick={handleRetract}
+                    className="w-full py-4 bg-zinc-900 border border-red-500/30 text-red-500 rounded-xl text-[10px] font-black uppercase hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ShieldOff className="w-3.5 h-3.5" />
+                    UNPUBLISH / RETRACT MISSION
+                  </button>
+                )}
+
+                <div className="h-px bg-zinc-900"></div>
+
+                <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-zinc-800">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase">Visibility Target</span>
+                    <p className="text-[9px] text-zinc-600 uppercase">{isPublic ? 'Public GitHub' : 'Private Vault'}</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsPublic(!isPublic)}
+                    className={`px-6 py-2 rounded-full text-[10px] font-black transition-all ${isPublic ? 'bg-orange-500 text-black shadow-[0_0_15px_#ea580c]' : 'bg-zinc-800 text-zinc-600'}`}
+                  >
+                    {isPublic ? 'PUBLIC' : 'PRIVATE'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-2">
+                  <Github className="w-5 h-5 text-zinc-600" />
+                  <p className="text-[10px] font-bold text-white uppercase">GitHub Sync</p>
+                  <p className="text-[9px] text-zinc-700">Auto-push to main branch enabled.</p>
+                </div>
+                <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-2">
+                  <Database className="w-5 h-5 text-zinc-600" />
+                  <p className="text-[10px] font-bold text-white uppercase">Supabase Backup</p>
+                  <p className="text-[9px] text-zinc-700">Real-time DB snapshots active.</p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: PREVIEW / CODE */}
+        <div className="w-[450px] bg-[#050505] border-l border-zinc-900 flex flex-col">
+          {activeTab === 'PREVIEW' ? (
+            <div className="flex-1 flex flex-col">
+              <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Terminal Output</span>
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500/20" />
+                  <div className="w-2 h-2 rounded-full bg-yellow-500/20" />
+                  <div className="w-2 h-2 rounded-full bg-green-500/20" />
+                </div>
+              </div>
+              <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-orange-500/80 whitespace-pre-wrap relative">
+                {isLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <PreviewLoading />
+                  </div>
+                )}
+                {terminal}
+                <div ref={terminalEndRef} />
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col">
+              <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">gatekeeper.py</span>
+                <Code size={14} className="text-zinc-700" />
+              </div>
+              <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-zinc-500">
+                <pre className="text-orange-500/60">
+{`# COMMANDNEXUS GATEKEEPER ENGINE v1.0 (2026 Build)
+# Integration: Firebase Auth + Firestore + Stripe/Crypto API
+
+import firebase_admin
+from firebase_admin import credentials, firestore
+from google.cloud import aiplatform
+
+# Initialize the Nexus Core Database
+db = firestore.client()
+
+def register_member(user_id, email, path_selection):
+    """
+    path_selection: 'PAY_ACCESS' or 'LEARN_EARN'
+    """
+    user_ref = db.collection('members').document(user_id)
+    
+    # Define the starting profile
+    profile = {
+        "email": email,
+        "identity_verified": True,
+        "nexus_status": "ACTIVE",
+        "current_badge": "WHITE",  # Default starting badge
+        "path": path_selection,
+        "credits_earned": 0.0,
+        "affiliate_referrals": 0
+    }
+
+    if path_selection == 'PAY_ACCESS':
+        # Trigger Stripe/Crypto Checkout Session
+        pass`}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const renderMarketingView = () => {
     const handlePlatformToggle = (platformId: string) => {
@@ -827,6 +957,23 @@ function App() {
         setTerminal(prev => prev + `\n[System]: SECURE_LINK_ESTABLISHED: ${activeLoginModal.toUpperCase()}\n[System]: IDENTITY_VERIFIED: ${loginInput.username}`);
         setActiveLoginModal(null);
         setLoginInput({ username: '', apiKey: '' });
+      }
+    };
+
+    const handleDispatch = async () => {
+      setIsDeployingDispatcher(true);
+      setTerminal(prev => prev + `\n\n[System]: INITIATING_MARKET_DISPATCH...\n[System]: TARGET_DOMAIN: ${targetDomain}\n[System]: SCRAMBLING_AGENTS...\n[System]: GATHERING_INTEL...`);
+      
+      try {
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        setTerminal(prev => prev + `\n[System]: DISPATCH_SUCCESSFUL: Intelligence gathered from ${targetDomain}.\n[System]: LEADS_INJECTED_INTO_NEXUS.`);
+        alert(`Dispatch Successful: Scrambling agents to ${targetDomain}`);
+      } catch (error) {
+        console.error("Dispatch failed:", error);
+      } finally {
+        setIsDeployingDispatcher(false);
       }
     };
 
@@ -910,9 +1057,11 @@ function App() {
           <MCL_Logo size="sm" />
           <div className="w-px h-4 bg-zinc-800 mx-2" />
           {[
-            { id: 'create', label: 'Campaign Creator', icon: Send },
+            { id: 'create', label: 'Post Creator', icon: Send },
+            { id: 'campaigns', label: 'Ad Campaigns', icon: Megaphone },
             { id: 'gallery', label: 'Media Gallery', icon: Grid },
-            { id: 'accounts', label: 'Connections', icon: Settings }
+            { id: 'accounts', label: 'Connections', icon: Settings },
+            ...(loginMode === 'ADMIN' ? [{ id: 'offense', label: 'Market Dispatcher', icon: Zap }] : [])
           ].map(tab => (
             <button 
               key={tab.id}
@@ -926,6 +1075,225 @@ function App() {
         </div>
 
         <div className="p-8">
+          {marketingTab === 'campaigns' && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex items-center justify-between mb-8">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Ad Campaign Manager</h2>
+                  <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Deploy paid neural assets across the network</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                    <span className="text-[10px] text-orange-500 font-black uppercase tracking-widest">Ad Budget: $1,250.00</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-4">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Campaign Details</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Campaign Name</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Summer Growth Offensive 2026"
+                          className="w-full p-3 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none text-zinc-300 text-sm"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Daily Budget ($)</label>
+                          <input 
+                            type="number" 
+                            value={budget}
+                            onChange={(e) => setBudget(Number(e.target.value))}
+                            className="w-full p-3 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none text-zinc-300 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Campaign Objective</label>
+                          <select className="w-full p-3 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none text-zinc-300 text-sm appearance-none">
+                            <option>CONVERSIONS</option>
+                            <option>TRAFFIC</option>
+                            <option>AWARENESS</option>
+                            <option>LEAD GEN</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-4">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Target Platforms</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {PLATFORMS.map(platform => (
+                        <button
+                          key={platform.id}
+                          onClick={() => handlePlatformToggle(platform.id)}
+                          className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${selectedPlatforms[platform.id] ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-zinc-800 bg-zinc-900/10 text-zinc-600 hover:border-zinc-700'}`}
+                        >
+                          <platform.icon size={20} />
+                          <span className="text-[8px] font-black uppercase tracking-widest">{platform.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-4">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Creative Asset</h3>
+                    {selectedMedia ? (
+                      <div className="relative rounded-xl overflow-hidden border border-zinc-800 aspect-video">
+                        <img src={selectedMedia.url} alt="Selected" className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2">
+                          <button onClick={() => setSelectedMedia(null)} className="p-2 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-red-500 transition-colors">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setMarketingTab('gallery')}
+                        className="border-2 border-dashed border-zinc-900 rounded-xl p-12 flex flex-col items-center justify-center text-center hover:bg-zinc-900/30 hover:border-orange-500/30 transition-all cursor-pointer group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 group-hover:text-orange-500 transition-all">
+                          <Plus size={24} />
+                        </div>
+                        <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Select Media from Gallery</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-6 sticky top-24">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Campaign Summary</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-zinc-500 uppercase">Daily Spend</span>
+                        <span className="text-white">${budget}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-zinc-500 uppercase">Platforms</span>
+                        <span className="text-white">{Object.values(selectedPlatforms).filter(v => v).length} Active</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-zinc-500 uppercase">Est. Reach</span>
+                        <span className="text-orange-500">~{budget * 1200} users/day</span>
+                      </div>
+                    </div>
+                    <div className="h-px bg-zinc-900" />
+                    <button 
+                      onClick={handlePublish}
+                      disabled={isPublishing || !selectedMedia}
+                      className="w-full py-4 bg-orange-500 text-black rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                    >
+                      {isPublishing ? 'DEPLOYING...' : 'LAUNCH CAMPAIGN'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {marketingTab === 'offense' && loginMode === 'ADMIN' && (
+            <div className="max-w-5xl mx-auto space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
+                    <Zap className="text-orange-500" />
+                    Market Dispatcher
+                  </h2>
+                  <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Competitive Displacement & Offensive Growth</p>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <Shield className="w-3 h-3 text-red-500" />
+                  <span className="text-[10px] text-red-500 font-black uppercase tracking-widest">Offensive Mode: ACTIVE</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-6">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Target Acquisition</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Competitor Domain</label>
+                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                          <Globe size={16} className="text-zinc-700" />
+                          <input 
+                            type="text" 
+                            value={targetDomain}
+                            onChange={(e) => setTargetDomain(e.target.value)}
+                            className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
+                            placeholder="competitor.com"
+                          />
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleDispatch}
+                        disabled={isDeployingDispatcher}
+                        className="w-full py-4 bg-orange-500 text-black rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                      >
+                        {isDeployingDispatcher ? 'DISPATCHING...' : `ATTACK MARKET: ${targetDomain}`}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-4">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Growth Shield Status</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Auto-Reply (AI)', status: 'ENABLED', color: 'text-green-500' },
+                        { label: 'Trend Hijacking', status: 'MONITORING', color: 'text-orange-500' },
+                        { label: 'Hiring Signals', status: 'SCANNING', color: 'text-blue-500' }
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-zinc-800/50">
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase">{item.label}</span>
+                          <span className={`text-[8px] font-black uppercase ${item.color}`}>{item.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-[#050505] rounded-2xl border border-zinc-900 overflow-hidden">
+                    <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
+                      <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Market Intelligence (War Loot)</h3>
+                      <span className="text-[9px] font-bold text-zinc-600 uppercase">{marketLeads.length} Leads Captured</span>
+                    </div>
+                    <div className="divide-y divide-zinc-900">
+                      {marketLeads.map((lead) => (
+                        <div key={lead.id} className="p-6 hover:bg-orange-500/[0.02] transition-colors group">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-2">
+                              <p className="text-sm text-zinc-300 leading-relaxed font-medium italic">"{lead.text}"</p>
+                              <div className="flex items-center gap-4">
+                                <a href={lead.source} target="_blank" rel="noopener noreferrer" className="text-[9px] text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 hover:underline">
+                                  <LinkIcon size={10} />
+                                  Source Intel
+                                </a>
+                                <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                                  <Clock size={10} />
+                                  {new Date(lead.timestamp).toLocaleTimeString()}
+                                </span>
+                              </div>
+                            </div>
+                            <button className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-lg text-[8px] font-black uppercase tracking-widest hover:border-orange-500/50 hover:text-orange-500 transition-all opacity-0 group-hover:opacity-100">
+                              Dispatch Agent
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {marketingTab === 'create' && (
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="flex items-center justify-between mb-8">
@@ -1128,33 +1496,92 @@ function App() {
                   </button>
                 </div>
               </div>
-
-              {/* SEARCH & FILTER BAR */}
-              <div className="flex flex-col sm:flex-row gap-4 bg-[#050505] p-4 rounded-2xl border border-zinc-900">
-                <div className="flex-1 relative">
-                  <Radar className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="SEARCH_ASSETS..."
-                    value={gallerySearch}
-                    onChange={(e) => setGallerySearch(e.target.value)}
-                    className="w-full bg-black/40 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-[11px] font-bold text-zinc-300 focus:border-orange-500/50 outline-none transition-all placeholder:text-zinc-700"
-                  />
+                {/* SEARCH & FILTER BAR */}
+              <div className="space-y-4 bg-[#050505] p-6 rounded-2xl border border-zinc-900">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Radar className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                    <input 
+                      type="text" 
+                      placeholder="SEARCH_ASSETS..."
+                      value={gallerySearch}
+                      onChange={(e) => setGallerySearch(e.target.value)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-[11px] font-bold text-zinc-300 focus:border-orange-500/50 outline-none transition-all placeholder:text-zinc-700"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    {['ALL', 'IMAGE', 'VIDEO'].map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setGalleryTypeFilter(type as any)}
+                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                          galleryTypeFilter === type 
+                            ? 'border-orange-500 text-orange-500 bg-orange-500/10' 
+                            : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  {['ALL', 'IMAGE', 'VIDEO'].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setGalleryTypeFilter(type as any)}
-                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
-                        galleryTypeFilter === type 
-                          ? 'border-orange-500 text-orange-500 bg-orange-500/10' 
-                          : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'
-                      }`}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-zinc-900">
+                  {/* Date Filter */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-1">Date Uploaded</label>
+                    <select 
+                      value={galleryDateFilter}
+                      onChange={(e) => setGalleryDateFilter(e.target.value)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-400 outline-none focus:border-orange-500/50 transition-all"
                     >
-                      {type}
+                      <option value="ALL">All Time</option>
+                      <option value="TODAY">Today</option>
+                      <option value="WEEK">This Week</option>
+                      <option value="MONTH">This Month</option>
+                    </select>
+                  </div>
+
+                  {/* Size Filter */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-1">File Size</label>
+                    <select 
+                      value={gallerySizeFilter}
+                      onChange={(e) => setGallerySizeFilter(e.target.value)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-400 outline-none focus:border-orange-500/50 transition-all"
+                    >
+                      <option value="ALL">Any Size</option>
+                      <option value="SMALL">Small ({'<'} 1MB)</option>
+                      <option value="MEDIUM">Medium (1MB - 10MB)</option>
+                      <option value="LARGE">Large ({'>'} 10MB)</option>
+                    </select>
+                  </div>
+
+                  {/* Sort By */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-1">Sort By</label>
+                    <select 
+                      value={gallerySortBy}
+                      onChange={(e) => setGallerySortBy(e.target.value as any)}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-400 outline-none focus:border-orange-500/50 transition-all"
+                    >
+                      <option value="name">Name</option>
+                      <option value="date">Date</option>
+                      <option value="size">Size</option>
+                    </select>
+                  </div>
+
+                  {/* Sort Order */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-1">Order</label>
+                    <button 
+                      onClick={() => setGallerySortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:border-orange-500/50 transition-all flex items-center justify-between"
+                    >
+                      {gallerySortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                      <ArrowUp className={`w-3 h-3 transition-transform ${gallerySortOrder === 'desc' ? 'rotate-180' : ''}`} />
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
 
@@ -1163,7 +1590,44 @@ function App() {
                   .filter(item => {
                     const matchesSearch = item.title.toLowerCase().includes(gallerySearch.toLowerCase());
                     const matchesType = galleryTypeFilter === 'ALL' || item.type.toUpperCase() === galleryTypeFilter;
-                    return matchesSearch && matchesType;
+                    
+                    // Date Filtering
+                    let matchesDate = true;
+                    if (galleryDateFilter !== 'ALL') {
+                      const itemDate = new Date(item.date);
+                      const now = new Date();
+                      if (galleryDateFilter === 'TODAY') {
+                        matchesDate = itemDate.toDateString() === now.toDateString();
+                      } else if (galleryDateFilter === 'WEEK') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        matchesDate = itemDate >= weekAgo;
+                      } else if (galleryDateFilter === 'MONTH') {
+                        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                        matchesDate = itemDate >= monthAgo;
+                      }
+                    }
+
+                    // Size Filtering
+                    let matchesSize = true;
+                    if (gallerySizeFilter !== 'ALL') {
+                      const sizeInMB = item.size / (1024 * 1024);
+                      if (gallerySizeFilter === 'SMALL') matchesSize = sizeInMB < 1;
+                      else if (gallerySizeFilter === 'MEDIUM') matchesSize = sizeInMB >= 1 && sizeInMB <= 10;
+                      else if (gallerySizeFilter === 'LARGE') matchesSize = sizeInMB > 10;
+                    }
+
+                    return matchesSearch && matchesType && matchesDate && matchesSize;
+                  })
+                  .sort((a, b) => {
+                    let comparison = 0;
+                    if (gallerySortBy === 'name') {
+                      comparison = a.title.localeCompare(b.title);
+                    } else if (gallerySortBy === 'date') {
+                      comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    } else if (gallerySortBy === 'size') {
+                      comparison = a.size - b.size;
+                    }
+                    return gallerySortOrder === 'asc' ? comparison : -comparison;
                   })
                   .map(item => (
                     <div key={item.id} className="bg-[#050505] rounded-2xl overflow-hidden border border-zinc-900 group relative">
@@ -1178,7 +1642,14 @@ function App() {
                       </div>
                       <div className="p-4">
                         <h3 className="font-bold text-white truncate text-sm">{item.title}</h3>
-                        <p className="text-[9px] text-zinc-600 mt-1 font-black uppercase tracking-widest">Added 2 days ago</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">
+                            {new Date(item.date).toLocaleDateString()}
+                          </p>
+                          <p className="text-[9px] text-zinc-500 font-bold uppercase">
+                            {formatFileSize(item.size)}
+                          </p>
+                        </div>
                       </div>
                       
                       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1198,7 +1669,33 @@ function App() {
               {galleryItems.filter(item => {
                 const matchesSearch = item.title.toLowerCase().includes(gallerySearch.toLowerCase());
                 const matchesType = galleryTypeFilter === 'ALL' || item.type.toUpperCase() === galleryTypeFilter;
-                return matchesSearch && matchesType;
+                
+                // Date Filtering
+                let matchesDate = true;
+                if (galleryDateFilter !== 'ALL') {
+                  const itemDate = new Date(item.date);
+                  const now = new Date();
+                  if (galleryDateFilter === 'TODAY') {
+                    matchesDate = itemDate.toDateString() === now.toDateString();
+                  } else if (galleryDateFilter === 'WEEK') {
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    matchesDate = itemDate >= weekAgo;
+                  } else if (galleryDateFilter === 'MONTH') {
+                    const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                    matchesDate = itemDate >= monthAgo;
+                  }
+                }
+
+                // Size Filtering
+                let matchesSize = true;
+                if (gallerySizeFilter !== 'ALL') {
+                  const sizeInMB = item.size / (1024 * 1024);
+                  if (gallerySizeFilter === 'SMALL') matchesSize = sizeInMB < 1;
+                  else if (gallerySizeFilter === 'MEDIUM') matchesSize = sizeInMB >= 1 && sizeInMB <= 10;
+                  else if (gallerySizeFilter === 'LARGE') matchesSize = sizeInMB > 10;
+                }
+
+                return matchesSearch && matchesType && matchesDate && matchesSize;
               }).length === 0 && (
                 <div className="py-20 text-center border-2 border-dashed border-zinc-900 rounded-3xl">
                   <Radar size={48} className="mx-auto text-zinc-800 mb-4 animate-pulse" />
@@ -1551,10 +2048,119 @@ function App() {
                           {agent.status}
                         </span>
                       </div>
-                      <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">Fee: {agent.fee}</p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Fee: {agent.fee}</p>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar size={10} className="text-zinc-700" />
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${agent.schedule !== 'NONE' ? 'text-orange-500' : 'text-zinc-700'}`}>
+                            {agent.schedule}
+                          </span>
+                        </div>
+                        {agent.schedule.startsWith('CRON:') && (
+                           <div className="flex items-center gap-2 px-2 py-0.5 bg-orange-500/5 border border-orange-500/20 rounded text-[8px] font-black text-orange-500 uppercase tracking-widest">
+                             <Clock size={8} />
+                             {agent.schedule.replace('CRON: ', '')}
+                           </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      {schedulingAgent === agent.name ? (
+                        <div className="flex items-center gap-2 animate-in slide-in-from-right-2">
+                          {!isCustomCron ? (
+                            <div className="flex bg-black/40 border border-zinc-800 rounded-lg p-1 gap-1">
+                              {['NONE', 'DAILY', 'WEEKLY', 'CUSTOM'].map(opt => (
+                                <button
+                                  key={opt}
+                                  onClick={() => {
+                                    if (opt === 'CUSTOM') {
+                                      setIsCustomCron(true);
+                                      setCustomCron(agent.schedule.startsWith('CRON:') ? agent.schedule.replace('CRON: ', '') : "");
+                                    } else {
+                                      setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: opt } : a));
+                                      setSchedulingAgent(null);
+                                    }
+                                  }}
+                                  className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-all ${
+                                    (opt === 'CUSTOM' && agent.schedule.startsWith('CRON:')) || agent.schedule === opt
+                                      ? 'bg-orange-500 text-black'
+                                      : 'text-zinc-500 hover:text-zinc-300'
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="text" 
+                                placeholder="Cron Pattern..." 
+                                value={customCron}
+                                onChange={(e) => setCustomCron(e.target.value)}
+                                className="w-32 bg-black/40 border border-zinc-800 rounded-lg py-1.5 px-3 text-[10px] font-bold text-zinc-300 focus:border-orange-500/50 outline-none transition-all"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    if (customCron) {
+                                      setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: `CRON: ${customCron}` } : a));
+                                      setSchedulingAgent(null);
+                                      setCustomCron("");
+                                      setIsCustomCron(false);
+                                    }
+                                  } else if (e.key === 'Escape') {
+                                    setIsCustomCron(false);
+                                  }
+                                }}
+                              />
+                              <button 
+                                onClick={() => {
+                                  if (customCron) {
+                                    setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: `CRON: ${customCron}` } : a));
+                                    setSchedulingAgent(null);
+                                    setCustomCron("");
+                                    setIsCustomCron(false);
+                                  }
+                                }}
+                                className="p-1.5 bg-orange-500 text-black rounded-lg hover:bg-orange-400 transition-all"
+                              >
+                                <CheckCircle2 size={14} />
+                              </button>
+                              <button 
+                                onClick={() => setIsCustomCron(false)}
+                                className="p-1.5 bg-zinc-800 text-zinc-400 rounded-lg hover:text-white transition-all"
+                              >
+                                <ArrowUp size={14} className="-rotate-90" />
+                              </button>
+                            </div>
+                          )}
+                          <button 
+                            onClick={() => {
+                              setSchedulingAgent(null);
+                              setCustomCron("");
+                              setIsCustomCron(false);
+                            }}
+                            className="p-1.5 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-lg hover:text-white transition-all"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => {
+                            setSchedulingAgent(agent.name);
+                            setIsCustomCron(agent.schedule.startsWith('CRON:'));
+                            setCustomCron(agent.schedule.startsWith('CRON:') ? agent.schedule.replace('CRON: ', '') : "");
+                          }}
+                          className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 hover:text-orange-500 hover:border-orange-500/50 transition-all"
+                          title="Schedule Agent"
+                        >
+                          <Clock size={16} />
+                        </button>
+                      )}
+                    </div>
                     <span className={`text-[9px] font-black px-3 py-1 rounded-full border ${agent.visibility === 'PUBLIC' ? 'border-orange-500/50 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-600'}`}>
                       {agent.visibility}
                     </span>

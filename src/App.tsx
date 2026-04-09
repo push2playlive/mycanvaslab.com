@@ -253,7 +253,7 @@ function App() {
   const [selectedMailId, setSelectedMailId] = useState<number | null>(null);
   const [isComposingMail, setIsComposingMail] = useState(false);
   const [mailDraft, setMailDraft] = useState({ to: '', subject: '', body: '' });
-  const [activeTab, setActiveTab] = useState('PREVIEW');
+  const [activeTab, setActiveTab] = useState<'PREVIEW' | 'CODE' | 'SPLIT'>('PREVIEW');
   const [marketingTab, setMarketingTab] = useState('create');
   
   // Marketing Form State
@@ -665,7 +665,20 @@ function App() {
         </div>
 
         <div className="flex items-center gap-6">
-           <div className="flex gap-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">
+          <div className="flex bg-black/40 border border-zinc-900 rounded-lg p-1 gap-1">
+            {(['CODE', 'PREVIEW', 'SPLIT'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1 rounded text-[8px] font-black uppercase transition-all ${
+                  activeTab === tab ? 'bg-orange-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">
               <button onClick={handleSaveToSupabase} className="hover:text-white transition-colors">Save to Supabase</button>
               <button onClick={handlePushToGit} className="hover:text-white transition-colors">Push to Git</button>
            </div>
@@ -840,36 +853,15 @@ function App() {
           )}
         </div>
 
-        {/* RIGHT COLUMN: PREVIEW / CODE */}
-        <div className="w-[450px] bg-[#050505] border-l border-zinc-900 flex flex-col">
-          {activeTab === 'PREVIEW' ? (
-            <div className="flex-1 flex flex-col">
-              <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
-                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Terminal Output</span>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500/20" />
-                  <div className="w-2 h-2 rounded-full bg-yellow-500/20" />
-                  <div className="w-2 h-2 rounded-full bg-green-500/20" />
-                </div>
-              </div>
-              <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-orange-500/80 whitespace-pre-wrap relative">
-                {isLoading && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <PreviewLoading />
-                  </div>
-                )}
-                {terminal}
-                <div ref={terminalEndRef} />
-              </div>
+        {/* COLUMN 2: CODE VIEW */}
+        {(activeTab === 'CODE' || activeTab === 'SPLIT') && (
+          <div className={`${activeTab === 'SPLIT' ? 'w-[400px]' : 'w-[500px]'} bg-[#050505] border-l border-zinc-900 flex flex-col animate-in slide-in-from-right duration-300`}>
+            <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">gatekeeper.py</span>
+              <Code size={14} className="text-zinc-700" />
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col">
-              <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
-                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">gatekeeper.py</span>
-                <Code size={14} className="text-zinc-700" />
-              </div>
-              <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-zinc-500">
-                <pre className="text-orange-500/60">
+            <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-zinc-500">
+              <pre className="text-orange-500/60">
 {`# COMMANDNEXUS GATEKEEPER ENGINE v1.0 (2026 Build)
 # Integration: Firebase Auth + Firestore + Stripe/Crypto API
 
@@ -900,11 +892,33 @@ def register_member(user_id, email, path_selection):
     if path_selection == 'PAY_ACCESS':
         # Trigger Stripe/Crypto Checkout Session
         pass`}
-                </pre>
+              </pre>
+            </div>
+          </div>
+        )}
+
+        {/* COLUMN 3: PREVIEW PANE (TERMINAL) */}
+        {(activeTab === 'PREVIEW' || activeTab === 'SPLIT') && (
+          <div className={`${activeTab === 'SPLIT' ? 'w-[400px]' : 'w-[500px]'} bg-[#050505] border-l border-zinc-900 flex flex-col animate-in slide-in-from-right duration-300`}>
+            <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Terminal Output</span>
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-red-500/20" />
+                <div className="w-2 h-2 rounded-full bg-yellow-500/20" />
+                <div className="w-2 h-2 rounded-full bg-green-500/20" />
               </div>
             </div>
-          )}
-        </div>
+            <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-orange-500/80 whitespace-pre-wrap relative">
+              {isLoading && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                  <PreviewLoading />
+                </div>
+              )}
+              {terminal}
+              <div ref={terminalEndRef} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

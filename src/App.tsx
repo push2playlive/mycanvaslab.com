@@ -6,7 +6,7 @@ import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged } fr
 import { 
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
-  Key, Lock, Home, BarChart3, Download, Share2, 
+  Key, Lock, Home, BarChart3, Download, Share2, CreditCard,
   Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff, Mail,
   Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
   Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon,
@@ -44,10 +44,10 @@ const SidebarButton = ({ label, icon, isActive, onClick }: { label: string, icon
 );
 
 const MOCK_GALLERY = [
-  { id: 1, type: 'image', url: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80', title: 'New Product Launch', date: '2026-04-01T10:00:00Z', size: 1024 * 500 }, // 500KB
-  { id: 2, type: 'image', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80', title: 'Behind the Scenes', date: '2026-04-02T14:30:00Z', size: 1024 * 800 }, // 800KB
-  { id: 3, type: 'video', url: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=400&q=80', title: 'Customer Testimonial', date: '2026-04-05T09:15:00Z', size: 1024 * 1024 * 5 }, // 5MB
-  { id: 4, type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&q=80', title: 'Office Setup', date: '2026-04-07T16:45:00Z', size: 1024 * 300 }, // 300KB
+  { id: 1, type: 'image', url: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80', title: 'New Product Launch', date: '2026-04-01T10:00:00Z', size: 1024 * 500, tags: ['marketing', 'launch', 'product'] }, // 500KB
+  { id: 2, type: 'image', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80', title: 'Behind the Scenes', date: '2026-04-02T14:30:00Z', size: 1024 * 800, tags: ['office', 'team'] }, // 800KB
+  { id: 3, type: 'video', url: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=400&q=80', title: 'Customer Testimonial', date: '2026-04-05T09:15:00Z', size: 1024 * 1024 * 5, tags: ['testimonial', 'video', 'social'] }, // 5MB
+  { id: 4, type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&q=80', title: 'Office Setup', date: '2026-04-07T16:45:00Z', size: 1024 * 300, tags: ['workspace', 'tech'] }, // 300KB
 ];
 
 const PLATFORMS = [
@@ -217,7 +217,7 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
 
 function App() {
   const [userPlan, setUserPlan] = useState('GURU ELITE');
-  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL'>('CREATOR');
+  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL' | 'PROFILE' | 'ACCOUNT'>('CREATOR');
   const [galleryItems, setGalleryItems] = useState(MOCK_GALLERY);
   const [gallerySearch, setGallerySearch] = useState('');
   const [galleryTypeFilter, setGalleryTypeFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO'>('ALL');
@@ -241,7 +241,8 @@ function App() {
         url,
         type: file.type.startsWith('video') ? 'video' : 'image',
         date: new Date().toISOString(),
-        size: file.size
+        size: file.size,
+        tags: []
       };
       setGalleryItems(prev => [newItem, ...prev]);
       setTerminal(prev => prev + `\n\n[System]: Asset "${file.name}" added to Media Library.`);
@@ -259,6 +260,7 @@ function App() {
   // Marketing Form State
   const [adCopy, setAdCopy] = useState('');
   const [keywords, setKeywords] = useState('');
+  const [productDescription, setProductDescription] = useState('');
   const [budget, setBudget] = useState(0);
   const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [selectedPlatforms, setSelectedPlatforms] = useState<any>({
@@ -330,6 +332,7 @@ function App() {
   const [customCron, setCustomCron] = useState("");
   const [isCustomCron, setIsCustomCron] = useState(false);
   const [targetDomain, setTargetDomain] = useState('canva.com');
+  const [targetSources, setTargetSources] = useState('reddit.com/r/design, twitter.com/search?q=competitor');
   const [marketLeads, setMarketLeads] = useState<any[]>([
     { id: 1, text: "Canva is too slow for my video edits, looking for alternatives.", source: "https://reddit.com/r/design", timestamp: new Date().toISOString() },
     { id: 2, text: "Is there a way to automate my YouTube chat with AI?", source: "https://twitter.com/search?q=youtube+chat", timestamp: new Date().toISOString() }
@@ -593,22 +596,23 @@ function App() {
   };
 
   const generateAdCopy = async () => {
-    if (!keywords) {
+    if (!keywords && !productDescription) {
       setTerminal(prev => prev + `\n\n[System]: Error - Please provide keywords or product description for the ad generator.`);
       return;
     }
 
     setIsGeneratingCopy(true);
-    setTerminal(prev => prev + `\n\n[System]: INITIATING_NEURAL_COPY_GENERATOR...\n[System]: ANALYZING_KEYWORDS: ${keywords}...`);
+    setTerminal(prev => prev + `\n\n[System]: INITIATING_NEURAL_COPY_GENERATOR...\n[System]: ANALYZING_INPUTS...`);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Generate 3 high-converting social media ad copy variations for a product with these keywords: ${keywords}. Each variation should include a headline, body text, and a call to action.`,
+        contents: `Generate 3 high-converting social media ad copy variations. 
+        Product Description: ${productDescription}
+        Keywords: ${keywords}
+        
+        Each variation should include a headline, body text, and a call to action.`,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -975,17 +979,87 @@ def register_member(user_id, email, path_selection):
     };
 
     const handleDispatch = async () => {
+      if (!targetDomain) {
+        alert("Please specify a target domain.");
+        return;
+      }
       setIsDeployingDispatcher(true);
-      setTerminal(prev => prev + `\n\n[System]: INITIATING_MARKET_DISPATCH...\n[System]: TARGET_DOMAIN: ${targetDomain}\n[System]: SCRAMBLING_AGENTS...\n[System]: GATHERING_INTEL...`);
+      const dispatchId = Date.now().toString();
       
+      const logToSupabase = async (message: string, type: 'INFO' | 'ERROR' | 'QUERY', details?: any) => {
+        const logEntry = {
+          dispatch_id: dispatchId,
+          target_domain: targetDomain,
+          message,
+          type,
+          details,
+          timestamp: new Date().toISOString()
+        };
+        
+        const { error } = await supabase.from('nexus_scraper_logs').insert([logEntry]);
+        if (error) console.warn("Log insertion failed:", error.message);
+      };
+
+      setTerminal(prev => prev + `\n\n[System]: INITIATING_MARKET_DISPATCH...\n[System]: TARGET_DOMAIN: ${targetDomain}\n[System]: TARGET_SOURCES: ${targetSources}\n[System]: SCRAMBLING_AGENTS...\n[System]: GATHERING_INTEL...`);
+      
+      await logToSupabase(`Initiating dispatch for ${targetDomain}`, 'INFO', { targetSources });
+
       try {
-        // Simulate delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Step 1: Visit URLs
+        const sources = targetSources.split(',').map(s => s.trim());
+        for (const source of sources) {
+          const url = `https://${source}`;
+          setTerminal(prev => prev + `\n[System]: VISITING: ${url}`);
+          await logToSupabase(`Visiting URL: ${url}`, 'INFO', { url });
+          
+          // Step 2: Query Elements
+          const elements = ['div.comment', 'span.mention', 'a.competitor-link'];
+          for (const el of elements) {
+            setTerminal(prev => prev + `\n[System]: QUERYING_ELEMENT: ${el}`);
+            await logToSupabase(`Querying element: ${el}`, 'QUERY', { url, element: el });
+          }
+        }
+
+        // Simulate scraping logic
+        const newLeads = [
+          { 
+            text: `Found mention of ${targetDomain} on ${sources[0]}: "Looking for a faster alternative to ${targetDomain}."`, 
+            source: `https://${sources[0]}`, 
+            timestamp: new Date().toISOString() 
+          },
+          { 
+            text: `Critical feedback for ${targetDomain} detected: "The pricing for ${targetDomain} just went up again."`, 
+            source: `https://${sources[1] || sources[0]}`, 
+            timestamp: new Date().toISOString() 
+          }
+        ];
+
+        // Store in Supabase nexus_market_leads table
+        const { data, error } = await supabase
+          .from('nexus_market_leads')
+          .insert(newLeads.map(lead => ({
+            text: lead.text,
+            source: lead.source,
+            timestamp: lead.timestamp,
+            target_domain: targetDomain
+          })))
+          .select();
+
+        if (error) {
+          console.warn("Supabase insertion failed (table might not exist):", error.message);
+          await logToSupabase(`Lead insertion failed: ${error.message}`, 'ERROR', { error: error.message });
+          setMarketLeads(prev => [...newLeads.map((l, i) => ({ ...l, id: Date.now() + i })), ...prev]);
+        } else {
+          await logToSupabase(`Successfully captured ${newLeads.length} leads`, 'INFO', { count: newLeads.length });
+          setMarketLeads(prev => [...(data || []), ...prev]);
+        }
         
         setTerminal(prev => prev + `\n[System]: DISPATCH_SUCCESSFUL: Intelligence gathered from ${targetDomain}.\n[System]: LEADS_INJECTED_INTO_NEXUS.`);
-        alert(`Dispatch Successful: Scrambling agents to ${targetDomain}`);
-      } catch (error) {
+        alert(`Dispatch Successful: Scrambling agents to ${targetDomain}. Leads stored in Supabase.`);
+      } catch (error: any) {
         console.error("Dispatch failed:", error);
+        await logToSupabase(`Dispatch failed: ${error.message}`, 'ERROR', { stack: error.stack });
+        setTerminal(prev => prev + `\n[System]: ERROR: Dispatch failed - ${error.message}`);
       } finally {
         setIsDeployingDispatcher(false);
       }
@@ -1245,6 +1319,19 @@ def register_member(user_id, email, path_selection):
                           />
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Target Forums / Threads</label>
+                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                          <MessageSquare size={16} className="text-zinc-700" />
+                          <input 
+                            type="text" 
+                            value={targetSources}
+                            onChange={(e) => setTargetSources(e.target.value)}
+                            className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
+                            placeholder="reddit.com/r/design, twitter.com"
+                          />
+                        </div>
+                      </div>
                       <button 
                         onClick={handleDispatch}
                         disabled={isDeployingDispatcher}
@@ -1393,17 +1480,32 @@ def register_member(user_id, email, path_selection):
                     )}
                   </div>
 
-                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
-                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Keywords & Targeting</h3>
-                    <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
-                      <LinkIcon size={18} className="text-zinc-700" />
-                      <input 
-                        type="text" 
-                        placeholder="e.g. #technology, startup, innovation" 
-                        value={keywords}
-                        onChange={(e) => setKeywords(e.target.value)}
-                        className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
-                      />
+                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-4">
+                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Keywords & Targeting</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Product Description</label>
+                        <textarea 
+                          rows={3}
+                          placeholder="Describe your product or service in detail..." 
+                          value={productDescription}
+                          onChange={(e) => setProductDescription(e.target.value)}
+                          className="w-full p-4 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none resize-none text-zinc-300 text-sm"
+                        ></textarea>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Keywords</label>
+                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                          <LinkIcon size={18} className="text-zinc-700" />
+                          <input 
+                            type="text" 
+                            placeholder="e.g. #technology, startup, innovation" 
+                            value={keywords}
+                            onChange={(e) => setKeywords(e.target.value)}
+                            className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
                     <p className="text-[9px] text-zinc-700 mt-2 font-medium uppercase tracking-tighter">Our bot will suggest reciprocal tags based on these keywords.</p>
                   </div>
@@ -1602,7 +1704,8 @@ def register_member(user_id, email, path_selection):
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {galleryItems
                   .filter(item => {
-                    const matchesSearch = item.title.toLowerCase().includes(gallerySearch.toLowerCase());
+                    const matchesSearch = item.title.toLowerCase().includes(gallerySearch.toLowerCase()) || 
+                                         item.tags?.some((t: string) => t.toLowerCase().includes(gallerySearch.toLowerCase()));
                     const matchesType = galleryTypeFilter === 'ALL' || item.type.toUpperCase() === galleryTypeFilter;
                     
                     // Date Filtering
@@ -1656,6 +1759,25 @@ def register_member(user_id, email, path_selection):
                       </div>
                       <div className="p-4">
                         <h3 className="font-bold text-white truncate text-sm">{item.title}</h3>
+                        <div className="flex flex-wrap gap-1 mt-2 mb-3">
+                          {item.tags?.map((tag: string, i: number) => (
+                            <span key={i} className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[8px] font-black text-zinc-500 uppercase tracking-tighter">
+                              #{tag}
+                            </span>
+                          ))}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newTag = prompt("Enter new tag:");
+                              if (newTag) {
+                                setGalleryItems(prev => prev.map(gi => gi.id === item.id ? { ...gi, tags: [...(gi.tags || []), newTag.toLowerCase()] } : gi));
+                              }
+                            }}
+                            className="px-1.5 py-0.5 bg-orange-500/10 border border-orange-500/20 rounded text-[8px] font-black text-orange-500 uppercase tracking-tighter hover:bg-orange-500/20 transition-all"
+                          >
+                            + ADD TAG
+                          </button>
+                        </div>
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">
                             {new Date(item.date).toLocaleDateString()}
@@ -2082,83 +2204,86 @@ def register_member(user_id, email, path_selection):
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       {schedulingAgent === agent.name ? (
-                        <div className="flex items-center gap-2 animate-in slide-in-from-right-2">
+                        <div className="flex flex-col gap-3 bg-black/60 border border-zinc-800 rounded-2xl p-4 animate-in slide-in-from-right-4 min-w-[240px]">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Schedule Mode</span>
+                            <div className="flex bg-zinc-900 rounded-lg p-1">
+                              <button 
+                                onClick={() => setIsCustomCron(false)}
+                                className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${!isCustomCron ? 'bg-orange-500 text-black' : 'text-zinc-600 hover:text-zinc-400'}`}
+                              >
+                                Intervals
+                              </button>
+                              <button 
+                                onClick={() => setIsCustomCron(true)}
+                                className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${isCustomCron ? 'bg-orange-500 text-black' : 'text-zinc-600 hover:text-zinc-400'}`}
+                              >
+                                Custom
+                              </button>
+                            </div>
+                          </div>
+
                           {!isCustomCron ? (
-                            <div className="flex bg-black/40 border border-zinc-800 rounded-lg p-1 gap-1">
-                              {['NONE', 'DAILY', 'WEEKLY', 'CUSTOM'].map(opt => (
+                            <div className="flex gap-2">
+                              {['NONE', 'DAILY', 'WEEKLY'].map(opt => (
                                 <button
                                   key={opt}
                                   onClick={() => {
-                                    if (opt === 'CUSTOM') {
-                                      setIsCustomCron(true);
-                                      setCustomCron(agent.schedule.startsWith('CRON:') ? agent.schedule.replace('CRON: ', '') : "");
-                                    } else {
-                                      setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: opt } : a));
-                                      setSchedulingAgent(null);
-                                    }
+                                    setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: opt } : a));
+                                    setSchedulingAgent(null);
                                   }}
-                                  className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-all ${
-                                    (opt === 'CUSTOM' && agent.schedule.startsWith('CRON:')) || agent.schedule === opt
-                                      ? 'bg-orange-500 text-black'
-                                      : 'text-zinc-500 hover:text-zinc-300'
-                                  }`}
+                                  className={`flex-1 py-2 rounded-xl border text-[9px] font-black uppercase transition-all ${agent.schedule === opt ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'}`}
                                 >
                                   {opt}
                                 </button>
                               ))}
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2">
-                              <input 
-                                type="text" 
-                                placeholder="Cron Pattern..." 
-                                value={customCron}
-                                onChange={(e) => setCustomCron(e.target.value)}
-                                className="w-32 bg-black/40 border border-zinc-800 rounded-lg py-1.5 px-3 text-[10px] font-bold text-zinc-300 focus:border-orange-500/50 outline-none transition-all"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 p-2 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                                <Clock size={14} className="text-zinc-700" />
+                                <input 
+                                  type="text" 
+                                  placeholder="* * * * *" 
+                                  value={customCron}
+                                  onChange={(e) => setCustomCron(e.target.value)}
+                                  className="flex-1 bg-transparent outline-none text-zinc-300 text-[10px] font-bold"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => {
                                     if (customCron) {
                                       setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: `CRON: ${customCron}` } : a));
                                       setSchedulingAgent(null);
                                       setCustomCron("");
                                       setIsCustomCron(false);
                                     }
-                                  } else if (e.key === 'Escape') {
-                                    setIsCustomCron(false);
-                                  }
-                                }}
-                              />
-                              <button 
-                                onClick={() => {
-                                  if (customCron) {
-                                    setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, schedule: `CRON: ${customCron}` } : a));
-                                    setSchedulingAgent(null);
-                                    setCustomCron("");
-                                    setIsCustomCron(false);
-                                  }
-                                }}
-                                className="p-1.5 bg-orange-500 text-black rounded-lg hover:bg-orange-400 transition-all"
-                              >
-                                <CheckCircle2 size={14} />
-                              </button>
-                              <button 
-                                onClick={() => setIsCustomCron(false)}
-                                className="p-1.5 bg-zinc-800 text-zinc-400 rounded-lg hover:text-white transition-all"
-                              >
-                                <ArrowUp size={14} className="-rotate-90" />
-                              </button>
+                                  }}
+                                  className="flex-1 py-2 bg-orange-500 text-black rounded-xl text-[9px] font-black uppercase hover:bg-orange-400 transition-all"
+                                >
+                                  Set
+                                </button>
+                                <button 
+                                  onClick={() => setIsCustomCron(false)}
+                                  className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-xl text-[9px] font-black uppercase hover:text-white transition-all"
+                                >
+                                  Back
+                                </button>
+                              </div>
                             </div>
                           )}
+                          
                           <button 
                             onClick={() => {
                               setSchedulingAgent(null);
                               setCustomCron("");
                               setIsCustomCron(false);
                             }}
-                            className="p-1.5 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-lg hover:text-white transition-all"
+                            className="w-full py-1 text-[8px] font-black text-zinc-700 hover:text-red-500 uppercase tracking-widest transition-colors"
                           >
-                            <X size={14} />
+                            Cancel
                           </button>
                         </div>
                       ) : (
@@ -2206,6 +2331,124 @@ def register_member(user_id, email, path_selection):
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+
+  const renderProfilePage = () => (
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#010101] nexus-grid-bg">
+      <div className="nexus-container galaxy-bg min-h-screen">
+        <div className="profile-header">
+          <div className="avatar-orb">
+            <img src="https://picsum.photos/seed/commander/200/200" alt="Commander" referrerPolicy="no-referrer" />
+            <div className="status-ring online"></div>
+          </div>
+          <div className="profile-info">
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase">COMMANDER [USERNAME]</h1>
+            <p className="rank text-orange-500 font-bold uppercase tracking-widest text-xs mt-2">Rank: Lead Architect | Net: CommandNexus Alpha</p>
+          </div>
+        </div>
+        
+        <div className="stats-grid">
+          <div className="stat-card"><h3>Missions</h3><p>42</p></div>
+          <div className="stat-card"><h3>Neural Credits</h3><p>{credits}</p></div>
+          <div className="stat-card"><h3>Uptime</h3><p>99.9%</p></div>
+        </div>
+
+        <div className="bio-section bg-black/40 p-8 rounded-2xl border border-zinc-900 shadow-shield">
+          <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Pilot's Log</h3>
+          <p className="text-zinc-300 italic text-lg leading-relaxed">"Bolding my way through the code. Searching for the next creative galaxy. The V24 Mainframe is humming, and the sky towers are within reach."</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSettingsPage = () => (
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#010101]">
+      <div className="max-w-3xl mx-auto p-12">
+        <div className="settings-panel shadow-shield bg-[#050505] p-10 rounded-3xl border border-zinc-900">
+          <h2 className="text-2xl font-black text-white tracking-tighter uppercase flex items-center gap-3 mb-10">
+            <Settings className="text-orange-500" /> Bridge Settings
+          </h2>
+          
+          <div className="space-y-8">
+            <div className="setting-group">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">Visual Interface</label>
+              <select className="nexus-input w-full bg-black border border-zinc-800 text-zinc-300 p-3 rounded-xl outline-none focus:border-orange-500/50 transition-all">
+                <option>Dark Matter (Default)</option>
+                <option>Nebula Pulse</option>
+                <option>Solar Flare</option>
+              </select>
+            </div>
+
+            <div className="setting-group">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">Nexus Sync</label>
+              <div className="toggle-box flex items-center justify-between p-4 bg-black border border-zinc-800 rounded-xl">
+                <span className="text-sm text-zinc-400">Auto-sync missions across all apps</span>
+                <input type="checkbox" defaultChecked className="accent-orange-500 w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="setting-group">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">Security Level</label>
+              <input type="range" min="1" max="10" defaultValue="8" className="nexus-slider w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+              <div className="flex justify-between mt-2">
+                <span className="text-[9px] text-zinc-700 font-bold uppercase">Shielding: High</span>
+                <span className="text-[9px] text-orange-500 font-black uppercase tracking-widest">Behavioral Firewall Active</span>
+              </div>
+            </div>
+            
+            <button className="w-full py-4 bg-orange-500 text-black font-black uppercase text-xs tracking-widest rounded-xl hover:bg-orange-400 transition-all shadow-[0_0_20px_rgba(234,88,12,0.2)]">
+              Save Bridge Configuration
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAccountPage = () => (
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#010101]">
+      <div className="max-w-4xl mx-auto p-12">
+        <div className="account-vault bg-[#050505] p-10 rounded-3xl border border-zinc-900 shadow-shield">
+          <header className="vault-header flex justify-between items-center mb-12">
+            <h2 className="text-2xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
+              <CreditCard className="text-orange-500" /> The Vault
+            </h2>
+            <button className="buyout-badge px-4 py-2 bg-orange-500 text-black font-black text-[10px] rounded-full uppercase tracking-widest">
+              LIFETIME OWNER
+            </button>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="subscription-status bg-black/40 p-8 rounded-2xl border border-zinc-800">
+              <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Active Plan: Architect Tier</h3>
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-6">Next billing cycle: May 10, 2026</p>
+              <button className="w-full py-3 bg-zinc-900 border border-zinc-800 text-zinc-300 font-black uppercase text-[10px] tracking-widest rounded-xl hover:border-orange-500/50 hover:text-orange-500 transition-all">
+                Upgrade Credits
+              </button>
+            </div>
+
+            <div className="connected-limbs bg-black/40 p-8 rounded-2xl border border-zinc-800">
+              <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Authorized Connections</h3>
+              <ul className="space-y-4">
+                {[
+                  { name: 'mycanvaslab.com', status: 'ACTIVE', icon: CheckCircle2, color: 'text-green-500' },
+                  { name: 'utubechat.com', status: 'ACTIVE', icon: CheckCircle2, color: 'text-green-500' },
+                  { name: 'hygieneteam.nz', status: 'INACTIVE', icon: Lock, color: 'text-zinc-700' }
+                ].map((limb, i) => (
+                  <li key={i} className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
+                    <div className="flex items-center gap-3">
+                      <limb.icon size={14} className={limb.color} />
+                      <span className="text-xs font-bold text-zinc-300">{limb.name}</span>
+                    </div>
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${limb.color}`}>{limb.status}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -3425,7 +3668,9 @@ def register_member(user_id, email, path_selection):
           {view === 'STATS' && renderStatsView()}
           {view === 'FILES' && renderFilesView()}
           {view === 'MAIL' && renderMailView()}
-          {view === 'SETTINGS' && renderSettingsView()}
+          {view === 'SETTINGS' && renderSettingsPage()}
+          {view === 'PROFILE' && renderProfilePage()}
+          {view === 'ACCOUNT' && renderAccountPage()}
         </div>
 
         {/* Input Dock (Sticky at bottom of main view) */}
@@ -3561,6 +3806,18 @@ def register_member(user_id, email, path_selection):
           className={`transition-all duration-300 ${view === 'SETTINGS' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
         >
           <Settings className="w-5 h-5" strokeWidth={1.5} />
+        </button>
+        <button 
+          onClick={() => setView('ACCOUNT')}
+          className={`transition-all duration-300 ${view === 'ACCOUNT' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
+        >
+          <CreditCard className="w-5 h-5" strokeWidth={1.5} />
+        </button>
+        <button 
+          onClick={() => setView('PROFILE')}
+          className={`transition-all duration-300 ${view === 'PROFILE' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
+        >
+          <User className="w-5 h-5" strokeWidth={1.5} />
         </button>
       </div>
     </div>

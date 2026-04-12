@@ -1,3 +1,15 @@
+/* src/index.css - THE SOVEREIGN CLARITY UPDATE */
+
+:root {
+  --v24-font: 'Inter', system-ui, -apple-system, sans-serif;
+  --v24-mono: 'JetBrains Mono', monospace;
+  --v24-accent: #e65100; /* Deep V12 Orange */
+  --v12-orange: #ea580c;
+  --v12-dark: #0a0a0a;
+  --v12-border: #333;
+  --v12-accent: #ea580c;
+}
+
 @import "tailwindcss";
 
 @theme {
@@ -5,260 +17,148 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+body {
+  font-family: var(--v24-font);
+  background: #000;
+  color: #eee;
+  overflow: hidden; /* No more drifting off-page */
+}
+
+/* THE PILOT RAIL (Agent Chat) */
+.agent-chat-sector {
+  position: fixed;
+  left: 0; top: 60px; bottom: 0;
+  width: 320px;
+  background: rgba(10, 10, 10, 0.98);
+  border-right: 1px solid #222;
+  transform: translateZ(0); /* Lock to GPU for zero drift */
+  z-index: 100;
+}
+
+/* THE FORGE (Main Build Preview) */
+.main-preview-area {
+  margin-left: 320px;
+  margin-top: 60px;
+  width: calc(100% - 320px);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* TOP DECK (Navigation) */
+.top-deck {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: #050505;
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 200;
+}
+
+/* HIGH-READABILITY TITLES */
+h1, .page-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  color: var(--v24-accent);
+}
+
+/* THE SETTINGS DRAWER */
+.settings-drawer {
+  position: fixed;
+  right: -400px; /* Hidden by default */
+  transition: right 0.3s ease-in-out;
+  background: #050505;
+  z-index: 1000;
+}
+
+/* THE GLOBE "GLIDE" */
+.nexus-globe {
+  transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 20px var(--v12-orange));
+}
+
+/* CUSTOM SCROLLBAR */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #ea580c;
+  border-radius: 5px;
+  border: 2px solid #000;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ea580c;
+}
+
+/* ANIMATIONS */
 @keyframes sonar-pulse {
   0% { transform: scale(0.5); opacity: 1; }
   100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-1px); }
+  20%, 40%, 60%, 80% { transform: translateX(1px); }
 }
 
 .animate-sonar {
   animation: sonar-pulse 1.5s ease-out infinite;
 }
 
-/* THE V12 SCROLLBAR & LAYOUT FIX */
-body {
-  overflow: hidden; /* Stops the whole page from rattling */
+.animate-blink {
+  animation: blink 1s infinite;
 }
 
-/* Force the Sidebar to the Wide Commander View */
-aside, .sidebar-container {
-  min-width: 420px !important;
-  width: 420px !important;
-  border-right: 2px solid #ea580c33 !important;
+.animate-shake {
+  animation: shake 0.2s ease-in-out infinite;
 }
 
-/* Make the Scrollbar thick and Orange so you can see it */
-::-webkit-scrollbar {
-  width: 15px !important;
-}
-::-webkit-scrollbar-thumb {
-  background: #ea580c !important;
-  border-radius: 5px;
-  border: 3px solid #000;
-}
-::-webkit-scrollbar-track {
-  background: #050505;
-}
-
-/* Sharp and Clean UI - No Blurry CRT noise */
-.custom-scrollbar::-webkit-scrollbar { width: 15px !important; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #ea580c !important; border-radius: 5px; border: 3px solid #000; }
-.custom-scrollbar::-webkit-scrollbar-track { background: #050505; }
-
-/* Memory-Trigger Buttons */
-.upload-btn-embossed {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.4);
-  background: linear-gradient(145deg, #1e1e1e, #111111);
-}
-
-/* Color Coding Logic */
-.action-green { color: #22c55e; } /* Go/Send/Publish */
-.action-red { color: #ef4444; }   /* Stop/Cancel/Delete */
-
-/* Tags for SEO and Accessibility */
-[title]::after {
-  content: attr(title);
-  display: none; /* Accessible to screen readers and Alt-Tags */
-}
-
-/* The Lab Blueprint Grid */
-.nexus-grid-bg {
+/* UTILITIES */
+.v12-grid-bg {
   background-size: 40px 40px;
   background-image:
-    linear-gradient(to right, rgba(51, 255, 51, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(51, 255, 51, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgba(234, 88, 12, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(234, 88, 12, 0.05) 1px, transparent 1px);
   background-attachment: fixed;
 }
 
-/* A glowing "Power" indicator for the corner */
-.status-led {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #33ff33;
-  box-shadow: 0 0 10px #33ff33;
-  display: inline-block;
-  margin-right: 8px;
+/* FOCUS MODE */
+.focus-mode .v12-grid-bg {
+  background-image: none !important;
+  background-color: #000 !important;
 }
 
-:root {
-  --nexus-cyan: #00ffcc;
-  --nexus-dark: #0a0a0a;
-  --nexus-border: #333;
+.focus-mode .agent-chat-sector,
+.focus-mode .main-preview-area {
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.9);
+  border-color: rgba(234, 88, 12, 0.2);
 }
 
-.galaxy-bg { background: radial-gradient(circle at center, #111 0%, #000 100%); }
-
-.shadow-shield {
-  border: 1px solid var(--nexus-border);
-  box-shadow: 0 0 20px rgba(0, 255, 204, 0.05);
-  border-radius: 12px;
-  padding: 2rem;
-}
-
-.nexus-input, .nexus-slider {
-  background: #1a1a1a;
-  border: 1px solid var(--nexus-border);
-  color: white;
-  padding: 10px;
-  border-radius: 6px;
-  margin-top: 5px;
-}
-
-.nexus-input:focus { border-color: var(--nexus-cyan); outline: none; }
-
-.nexus-container {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  margin-bottom: 3rem;
-}
-
-.avatar-orb {
-  position: relative;
-  width: 120px;
-  height: 120px;
-}
-
-.avatar-orb img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid var(--nexus-cyan);
-  object-fit: cover;
-}
-
-.status-ring {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 3px solid var(--nexus-dark);
-}
-
-.status-ring.online { background: #33ff33; box-shadow: 0 0 10px #33ff33; }
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.stat-card {
-  background: #050505;
-  border: 1px solid var(--nexus-border);
-  padding: 1.5rem;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.stat-card h3 {
-  font-size: 0.75rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.stat-card p {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: var(--nexus-cyan);
-}
-
-.bio-section h3 {
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  margin-bottom: 1rem;
-  color: #999;
-}
-
-.bio-section p {
-  font-style: italic;
-  color: #ccc;
-  font-size: 1.1rem;
-}
-
-.settings-panel h2, .vault-header h2 {
-  font-size: 1.5rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.setting-group {
-  margin-bottom: 2rem;
-}
-
-.setting-group label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: #666;
-  margin-bottom: 0.5rem;
-}
-
-.toggle-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #111;
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--nexus-border);
-}
-
-.account-vault {
-  padding: 2rem;
-}
-
-.vault-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-}
-
-.buyout-badge {
-  background: var(--nexus-cyan);
-  color: black;
-  font-weight: 900;
-  font-size: 0.7rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  text-transform: uppercase;
-}
-
-.subscription-status {
-  background: #050505;
-  border: 1px solid var(--nexus-border);
-  padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 3rem;
-}
-
-.connected-limbs ul {
-  list-style: none;
-  padding: 0;
-}
-
-.connected-limbs li {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid #111;
+.focus-mode h1.page-title {
+  color: #fff;
+  text-shadow: 0 0 20px rgba(234, 88, 12, 0.5);
 }

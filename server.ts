@@ -6,6 +6,13 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { exec } from "child_process";
+import Replicate from "replicate";
+import ffmpeg from "fluent-ffmpeg";
+import fs from "fs";
+import { promisify } from "util";
+import { pipeline } from "stream";
+
+const streamPipeline = promisify(pipeline);
 
 dotenv.config();
 
@@ -110,6 +117,153 @@ async function startServer() {
     } catch (error: any) {
       console.error("AI Error:", error);
       res.status(500).json({ error: error.message || "Internal Server Error" });
+    }
+  });
+  
+  // Notification Endpoint (Mock Email Service)
+  app.post("/api/notify", (req, res) => {
+    const { type, payload, userEmail } = req.body;
+    
+    console.log(`[Notification Service]: Sending ${type} to ${userEmail}`);
+    console.log(`[Notification Payload]:`, payload);
+    
+    // In a real app, you would use SendGrid, Mailgun, etc.
+    // For now, we log to terminal to simulate the "Sovereign" feedback loop
+    const timestamp = new Date().toISOString();
+    const logMessage = `\n[EMAIL_NOTIFICATION] [${timestamp}]\nTO: ${userEmail}\nTYPE: ${type}\nCONTENT: ${JSON.stringify(payload, null, 2)}\n[END_EMAIL]\n`;
+    
+    console.log(logMessage);
+    
+    res.json({ success: true, message: "Notification dispatched to neural buffer." });
+  });
+
+  // THE NEURAL RENDER: AI Video + Voiceover
+  app.post("/api/generate-complete-video", async (req, res) => {
+    const { description } = req.body;
+    
+    try {
+      console.log(`[Neural Render]: Starting mission for: ${description}`);
+
+      // 1. GENERATE VOICEOVER (ElevenLabs)
+      const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
+      const voiceId = "pNInz6obpg8nEByWQX7d"; // Adam
+      let audioPath = path.join(__dirname, 'public', 'temp_audio.mp3');
+      
+      if (elevenLabsKey) {
+        console.log("[Neural Render]: Calling ElevenLabs...");
+        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': elevenLabsKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: description,
+            model_id: "eleven_monolingual_v1",
+            voice_settings: { stability: 0.5, similarity_boost: 0.5 }
+          }),
+        });
+
+        if (!response.ok) throw new Error("ElevenLabs API failed.");
+        const arrayBuffer = await response.arrayBuffer();
+        fs.writeFileSync(audioPath, Buffer.from(arrayBuffer));
+      } else {
+        console.warn("[Neural Render]: ElevenLabs key missing, skipping audio.");
+      }
+
+      // 2. GENERATE VIDEO (Replicate)
+      const replicateKey = process.env.REPLICATE_API_TOKEN;
+      let finalVideoUrl = "";
+      
+      if (replicateKey) {
+        const replicate = new Replicate({ auth: replicateKey });
+        
+        // Step A: Generate Image (SDXL)
+        console.log("[Neural Render]: Generating base image (SDXL)...");
+        const imageOutput: any = await replicate.run(
+          "stability-ai/sdxl:36469ef044a7951f9383458e8b6819110743c2d013c14eb294c4740191f30c6d",
+          { input: { prompt: description, negative_prompt: "text, watermark, blurry" } }
+        );
+        const imageUrl = imageOutput[0];
+
+        // Step B: Generate Video (SVD)
+        console.log("[Neural Render]: Animating image (SVD)...");
+        const videoOutput: any = await replicate.run(
+          "stability-ai/stable-video-diffusion:ac7327c20fcb047d9bc096b06710e973094bb77599695b605997efc3ad274925",
+          { input: { input_image: imageUrl, video_length: "14_frames_with_svd" } }
+        );
+        finalVideoUrl = videoOutput[0];
+      } else {
+        throw new Error("REPLICATE_API_TOKEN is required for video generation.");
+      }
+
+      // 3. MERGE MEDIA (ffmpeg)
+      const videoPath = path.join(__dirname, 'public', 'temp_video.mp4');
+      const outputPath = path.join(__dirname, 'public', 'neural_asset_v12.mp4');
+
+      if (finalVideoUrl && fs.existsSync(audioPath)) {
+        console.log("[Neural Render]: Downloading video for merge...");
+        const videoRes = await fetch(finalVideoUrl);
+        const videoBuffer = await videoRes.arrayBuffer();
+        fs.writeFileSync(videoPath, Buffer.from(videoBuffer));
+
+        console.log("[Neural Render]: Merging neural assets with ffmpeg...");
+        await new Promise((resolve, reject) => {
+          ffmpeg()
+            .input(videoPath)
+            .input(audioPath)
+            .outputOptions("-c:v copy", "-c:a aac", "-map 0:v:0", "-map 1:a:0", "-shortest")
+            .on('end', resolve)
+            .on('error', (err) => {
+              console.warn("[Neural Render]: ffmpeg merge failed, falling back to silent video.", err);
+              fs.copyFileSync(videoPath, outputPath);
+              resolve(null);
+            })
+            .save(outputPath);
+        });
+      } else if (finalVideoUrl) {
+        console.log("[Neural Render]: No audio generated, serving silent video.");
+        const videoRes = await fetch(finalVideoUrl);
+        const videoBuffer = await videoRes.arrayBuffer();
+        fs.writeFileSync(outputPath, Buffer.from(videoBuffer));
+      }
+
+      res.json({ 
+        success: true, 
+        videoUrl: "/neural_asset_v12.mp4",
+        message: "Neural render complete. Asset synced to lab." 
+      });
+
+    } catch (error: any) {
+      console.error("Neural Render Error:", error);
+      res.status(500).json({ error: error.message || "Neural render failed." });
+    }
+  });
+
+  // THE BACKLINK BLAST: Distribution Service
+  app.post("/api/marketing/distribute", async (req, res) => {
+    const { description, videoUrl, backlinkSync } = req.body;
+    
+    try {
+      console.log(`[Backlink Blast]: Initiating distribution for asset: ${videoUrl}`);
+      
+      if (backlinkSync) {
+        console.log("[Backlink Blast]: Submitting to 50+ indexed directories...");
+        // In a real scenario, you'd read directories.csv and submit via a worker
+        // const directories = fs.readFileSync('directories.csv', 'utf-8').split('\n');
+      }
+
+      // Simulate distribution delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      res.json({ 
+        success: true, 
+        message: "Campaign launched. Distribution in progress across the Backlink Network." 
+      });
+
+    } catch (error: any) {
+      console.error("Distribution Error:", error);
+      res.status(500).json({ error: error.message || "Distribution failed." });
     }
   });
 

@@ -7,11 +7,21 @@ import {
   Cpu, Send, Plus, Globe, LayoutGrid, Radar, Wrench, 
   Image, Folder, Settings, ArrowUp, Github, Database, 
   Key, Lock, Home, BarChart3, Download, Share2, CreditCard,
-  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff, Mail,
+  Shield, Zap, Upload, Code, Eye, EyeOff, MessageSquare, User, Menu, ShieldOff, Mail, ChevronDown, Terminal,
   Music, ShieldCheck, ImagePlus, Volume2, Video, MapPin, Sparkles, X, LogOut,
+  Mic, Scan, Bell,
   Megaphone, Facebook, Instagram, Youtube, DollarSign, TrendingUp, CheckCircle2, AlertCircle, Grid, Link as LinkIcon,
-  FileText, Calendar, Clock, Activity
+  FileText, Calendar, Clock, Activity, PauseCircle, Rocket, Wallet
 } from "lucide-react";
+import { AgentSwitcher } from './components/Navigation/AgentSwitcher';
+import { SovereignLaunchpad } from './components/marketing/SovereignLaunchpad';
+import { ProfileView } from './components/profile/ProfileView';
+import { useProfileStore } from './store/profileStore';
+
+import { UserProToggle } from './components/admin/UserProToggle';
+import { useProCheck } from './hooks/useProCheck';
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 
 // STYLES: Tactical Glassmorphism
 const glassGrey = "bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/50";
@@ -40,6 +50,18 @@ const SidebarButton = ({ label, icon, isActive, onClick }: { label: string, icon
       <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
     </div>
     {isActive && <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_#ea580c]" />}
+  </button>
+);
+
+const NavButton = ({ icon, label, active, onClick, color = "text-zinc-400" }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, color?: string }) => (
+  <button 
+    onClick={onClick}
+    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${
+      active ? 'bg-zinc-900 text-white border border-zinc-800 shadow-xl' : `hover:bg-zinc-900/50 ${color}`
+    }`}
+  >
+    {icon}
+    <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
   </button>
 );
 
@@ -199,7 +221,7 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
           <span className="text-[10px] font-black text-zinc-500 uppercase">Latency: 14ms</span>
         </div>
         <div className="w-px h-4 bg-zinc-800" />
-        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Access Command Nexus →</span>
+        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Access Command Center →</span>
       </button>
 
       <footer className="mt-40 pb-10 w-full max-w-7xl px-10 border-t border-zinc-900 pt-10 flex justify-between items-center text-zinc-600 text-[8px] font-black uppercase tracking-widest">
@@ -217,7 +239,7 @@ const LandingPage = ({ onEnter, onAdminEnter }: { onEnter: () => void, onAdminEn
 
 function App() {
   const [userPlan, setUserPlan] = useState('GURU ELITE');
-  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL' | 'PROFILE' | 'ACCOUNT'>('CREATOR');
+  const [view, setView] = useState<'HOME' | 'STATS' | 'CREATOR' | 'FILES' | 'SETTINGS' | 'MARKETING' | 'PRICING' | 'MAIL' | 'PROFILE' | 'ACCOUNT' | 'DATABASE' | 'LANDING_TEST'>('PROFILE');
   const [galleryItems, setGalleryItems] = useState(MOCK_GALLERY);
   const [gallerySearch, setGallerySearch] = useState('');
   const [galleryTypeFilter, setGalleryTypeFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO'>('ALL');
@@ -227,6 +249,44 @@ function App() {
   const [gallerySizeFilter, setGallerySizeFilter] = useState<string>('ALL');
   const [previewItem, setPreviewItem] = useState<any | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [supabaseLogs, setSupabaseLogs] = useState<any[]>([]);
+  const [supabaseUsers, setSupabaseUsers] = useState<any[]>([]);
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
+
+  const fetchSupabaseData = async () => {
+    try {
+      const { data: logs, error: logsError } = await supabase
+        .from('v12_scraper_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(50);
+      
+      if (logsError) throw logsError;
+      setSupabaseLogs(logs || []);
+
+      if (loginMode === 'ADMIN') {
+        const { data: users, error: usersError } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (!usersError) {
+          setSupabaseUsers(users || []);
+        }
+      }
+
+      setIsSupabaseConnected(true);
+    } catch (err) {
+      console.warn("Supabase fetch failed:", err);
+      setIsSupabaseConnected(false);
+    }
+  };
+
+  useEffect(() => {
+    if (view === 'DATABASE') {
+      fetchSupabaseData();
+    }
+  }, [view]);
 
   const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -273,7 +333,9 @@ function App() {
   const [creatorSubTab, setCreatorSubTab] = useState<'MISSION CONTROL' | 'PUBLISH / BASH'>('MISSION CONTROL');
   const [statsSubTab, setStatsSubTab] = useState<'METRICS' | 'WALL'>('METRICS');
   const [filesSubTab, setFilesSubTab] = useState<'FOLDERS' | 'TRANSFER'>('FOLDERS');
-  const [settingsSubTab, setSettingsSubTab] = useState<'General' | 'Neural' | 'Security' | 'Data' | 'Billing' | 'Legal' | 'Terms'>('General');
+  const [settingsSubTab, setSettingsSubTab] = useState<'General' | 'Neural' | 'Notifications' | 'Security' | 'Data' | 'Billing' | 'Legal' | 'Terms'>('General');
+  const [profileTab, setProfileTab] = useState<'OVERVIEW' | 'WALLET' | 'AFFILIATE'>('OVERVIEW');
+  const { isPro, checking: isProChecking } = useProCheck();
   const [isPublic, setIsPublic] = useState(false); // Default: Private
   const [isConnected, setIsConnected] = useState({ github: false, supabase: false });
   const [model, setModel] = useState<'GEMINI' | 'CHATGPT'>('GEMINI'); 
@@ -287,9 +349,48 @@ function App() {
     kimi: localStorage.getItem('MYCANVAS_KIMI_KEY') || ''
   });
   const [showApiVault, setShowApiVault] = useState(false);
+  const [showSystemVault, setShowSystemVault] = useState(false);
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showAiFeatures, setShowAiFeatures] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isFocusing, setIsFocusing] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const toggleMic = () => {
+    setIsListening(!isListening);
+    if (!isListening) {
+      setTerminal(prev => prev + "\n[System]: Neural Voice Interface activated. Listening for command...");
+    } else {
+      setTerminal(prev => prev + "\n[System]: Neural Voice Interface deactivated.");
+    }
+  };
+
+  const toggleFocus = () => {
+    setIsFocusing(!isFocusing);
+    if (!isFocusing) {
+      setTerminal(prev => prev + "\n[System]: Visual Focus Protocol engaged. Select target area.");
+    } else {
+      setTerminal(prev => prev + "\n[System]: Visual Focus Protocol disengaged.");
+    }
+  };
+
+  const toggleFocusMode = () => {
+    setIsFocusMode(!isFocusMode);
+    setTerminal(prev => prev + `\n[System]: Focus Mode ${!isFocusMode ? 'ENGAGED' : 'DISENGAGED'}.`);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleFocusMode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFocusMode]);
+
   const [posts, setPosts] = useState<{id: number, author: string, content: string, image?: string, timestamp: string}[]>([
     { id: 1, author: "Diamond Architect", content: "V12 Engine initialized. The lab is live.", timestamp: "2m ago" },
     { id: 2, author: "Noble Guest", content: "This UI is insane. Looking forward to the Agent Builder.", timestamp: "1h ago" }
@@ -313,6 +414,55 @@ function App() {
   const [activeLoginModal, setActiveLoginModal] = useState<string | null>(null);
   const [socialLogins, setSocialLogins] = useState<Record<string, { username: string, apiKey: string }>>({});
   const [loginInput, setLoginInput] = useState({ username: '', apiKey: '' });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateField = (field: string, value: any) => {
+    let error = '';
+    switch (field) {
+      case 'email':
+        if (!value) error = 'Email is required';
+        else if (!/\S+@\S+\.\S+/.test(value)) error = 'Invalid email format';
+        break;
+      case 'password':
+        if (!value) error = 'Password is required';
+        else if (value.length < 6) error = 'Password must be at least 6 characters';
+        break;
+      case 'apiKey':
+        if (!value) error = 'API Key is required';
+        else if (value.length < 20) error = 'API Key seems too short';
+        break;
+      case 'domain':
+        if (!value) error = 'Domain is required';
+        else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(value)) error = 'Invalid domain format';
+        break;
+      case 'chat':
+        if (!value.trim()) error = 'Command cannot be empty';
+        break;
+      case 'sources':
+        if (!value.trim()) error = 'Target sources are required';
+        break;
+      case 'budget':
+        if (value < 0) error = 'Budget cannot be negative';
+        break;
+      case 'name':
+        if (!value.trim()) error = 'Name is required';
+        break;
+      case 'message':
+        if (!value.trim()) error = 'Message cannot be empty';
+        break;
+      case 'username':
+        if (!value.trim()) error = 'Username is required';
+        break;
+      case 'post':
+        if (!value.trim()) error = 'Post content cannot be empty';
+        break;
+      default:
+        if (!value) error = 'This field is required';
+    }
+    
+    setValidationErrors(prev => ({ ...prev, [field]: error }));
+    return !error;
+  };
 
   const creditOptions = [
     { label: '100 Credits / mo', price: '$10' },
@@ -333,6 +483,75 @@ function App() {
   const [isCustomCron, setIsCustomCron] = useState(false);
   const [targetDomain, setTargetDomain] = useState('canva.com');
   const [targetSources, setTargetSources] = useState('reddit.com/r/design, twitter.com/search?q=competitor');
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    email_notifications_enabled: true,
+    agent_status_alerts: true,
+    marketing_milestone_alerts: true
+  });
+
+  const fetchNotificationPreferences = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const { data, error } = await supabase
+        .from('notification_preferences')
+        .select('*')
+        .eq('user_id', auth.currentUser.uid)
+        .single();
+      
+      if (data) {
+        setNotificationPreferences(data);
+      } else if (error && error.code === 'PGRST116') {
+        // Not found, trigger will create it, but we can also insert manually if needed
+        await supabase.from('notification_preferences').insert({ user_id: auth.currentUser.uid });
+      }
+    } catch (err) {
+      console.error("Failed to fetch notification preferences:", err);
+    }
+  };
+
+  const updateNotificationPreferences = async (updates: any) => {
+    if (!auth.currentUser) return;
+    try {
+      const { error } = await supabase
+        .from('notification_preferences')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('user_id', auth.currentUser.uid);
+      
+      if (!error) {
+        setNotificationPreferences(prev => ({ ...prev, ...updates }));
+        setTerminal(prev => prev + `\n[System]: Notification preferences updated in Security Vault.`);
+      }
+    } catch (err) {
+      console.error("Failed to update notification preferences:", err);
+    }
+  };
+
+  const sendEmailNotification = async (type: string, payload: any) => {
+    if (!notificationPreferences.email_notifications_enabled) return;
+    if (type === 'AGENT_STATUS' && !notificationPreferences.agent_status_alerts) return;
+    if (type === 'MARKETING_MILESTONE' && !notificationPreferences.marketing_milestone_alerts) return;
+
+    try {
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          payload,
+          userEmail: auth.currentUser?.email || 'architect@mycanvaslab.com'
+        })
+      });
+    } catch (err) {
+      console.error("Failed to send email notification:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (auth.currentUser) {
+      fetchNotificationPreferences();
+    }
+  }, [auth.currentUser]);
+
   const [marketLeads, setMarketLeads] = useState<any[]>([
     { id: 1, text: "Canva is too slow for my video edits, looking for alternatives.", source: "https://reddit.com/r/design", timestamp: new Date().toISOString() },
     { id: 2, text: "Is there a way to automate my YouTube chat with AI?", source: "https://twitter.com/search?q=youtube+chat", timestamp: new Date().toISOString() }
@@ -340,6 +559,42 @@ function App() {
   const [isDeployingDispatcher, setIsDeployingDispatcher] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{ data: string, mimeType: string, name: string } | null>(null);
+
+  // AGENT STATUS MONITORING & AUTO-RESTART
+  useEffect(() => {
+    const errorAgents = agents.filter(a => a.status === 'ERROR');
+    if (errorAgents.length > 0) {
+      // Notify about errors
+      errorAgents.forEach(agent => {
+        sendEmailNotification('AGENT_STATUS', {
+          agentName: agent.name,
+          status: 'ERROR',
+          message: `Critical fault detected in ${agent.name}. Initiating auto-recovery protocol.`
+        });
+      });
+
+      const timer = setTimeout(() => {
+        setAgents(prev => {
+          const updated = prev.map(agent => 
+            agent.status === 'ERROR' ? { ...agent, status: 'RUNNING' } : agent
+          );
+          
+          // Notify about recovery
+          errorAgents.forEach(agent => {
+            sendEmailNotification('AGENT_STATUS', {
+              agentName: agent.name,
+              status: 'RUNNING',
+              message: `${agent.name} has been successfully restored. All systems nominal.`
+            });
+          });
+
+          return updated;
+        });
+        setTerminal(prev => prev + `\n[System]: AUTO_RESTART_PROTOCOL_EXECUTED. ALL_SYSTEMS_NOMINAL.`);
+      }, 5000); // Restart after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [agents]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -363,6 +618,24 @@ function App() {
   const scrollToBottom = () => {
     terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const checkSupabase = async () => {
+      try {
+        const { error } = await supabase.from('v12_scraper_logs').select('count', { count: 'exact', head: true });
+        const connected = !error;
+        setIsSupabaseConnected(connected);
+        setIsConnected(prev => ({ ...prev, supabase: connected }));
+        if (connected) {
+          setTerminal(prev => prev + `\n[System]: SUPABASE_CONNECTION_ESTABLISHED: Mainframe Online.`);
+        }
+      } catch (err) {
+        setIsSupabaseConnected(false);
+        setIsConnected(prev => ({ ...prev, supabase: false }));
+      }
+    };
+    checkSupabase();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -416,6 +689,9 @@ function App() {
         const role = firebaseUser.email === 'push2playlive@gmail.com' ? 'ADMIN' : 'MEMBER';
         setLoginMode(role);
         
+        // Fetch profile from store
+        useProfileStore.getState().fetchProfile(firebaseUser.uid);
+        
         setTerminal(prev => prev + `\n\n[System]: Neural Link Established. Welcome, ${firebaseUser.displayName || 'Architect'}.`);
       } else {
         setUser(null);
@@ -446,6 +722,11 @@ function App() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    const isEmailValid = validateField('email', loginEmail);
+    const isPassValid = validateField('password', loginPassword);
+
+    if (!isEmailValid || !isPassValid) return;
+
     if ((loginEmail === 'mycanvas@utubemail.com' || loginEmail === 'push2playlive@gmail.com') && loginPassword === 'admin123') {
       setIsLoggedIn(true);
       setTerminal(prev => prev + `\n\n[System]: Admin Access Granted. Welcome, Architect.`);
@@ -492,6 +773,7 @@ function App() {
   };
 
   const handleKeyChange = (provider: 'gemini' | 'chatgpt' | 'agent' | 'kimi', value: string) => {
+    validateField(provider, value);
     const newKeys = { ...apiKeys, [provider]: value };
     setApiKeys(newKeys);
     localStorage.setItem(`MYCANVAS_${provider.toUpperCase()}_KEY`, value);
@@ -576,7 +858,7 @@ function App() {
   };
 
   const handleAddPost = () => {
-    if (!newPost.trim()) return;
+    if (!validateField('post', newPost)) return;
     const post = {
       id: Date.now(),
       author: "You (Architect)",
@@ -642,287 +924,309 @@ function App() {
     }
   };
 
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'agent', text: string}[]>([
+    { role: 'agent', text: 'V12_CORE online. System telemetry optimal. How can I assist with your build today?' }
+  ]);
+
+  const handleSendMessage = () => {
+    if (!validateField('chat', chatInput)) return;
+    const newHistory = [...chatHistory, { role: 'user', text: chatInput }];
+    setChatHistory(newHistory as any);
+    setChatInput('');
+    
+    // Simulated Agent Response
+    setTimeout(() => {
+      setChatHistory(prev => [...prev, { 
+        role: 'agent', 
+        text: `Processing request... Analyzing build protocols. I have optimized the gatekeeper logic based on your input.` 
+      }] as any);
+    }, 1000);
+  };
+
   const renderCreatorView = () => (
-    <div className="flex-1 flex flex-col relative bg-[#010101]">
-      {/* TOP UTILITY STRIP */}
-      <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-6 flex items-center justify-between z-20">
-        <div className="flex items-center gap-6">
-          <MCL_Logo size="sm" />
-          <div className="w-px h-4 bg-zinc-800 mx-2" />
-           {/* THE TOP TAB BAR */}
-           <div className="flex gap-4 p-1 bg-black/40 border border-zinc-900 rounded-xl backdrop-blur-md">
-             {['MISSION CONTROL', 'PUBLISH / BASH'].map((tab) => {
-               const isActive = creatorSubTab === tab;
-               return (
-                 <button
-                   key={tab}
-                   onClick={() => setCreatorSubTab(tab as any)}
-                   className={`px-6 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all border ${
-                     isActive ? tabActive : tabInactive
-                   }`}
-                 >
-                   {tab}
-                 </button>
-               );
-             })}
-           </div>
+    <div className="flex-1 flex flex-col relative bg-[#010101] overflow-hidden">
+      {/* THE PILOT RAIL (Agent Chat) */}
+      <div className={`agent-chat-sector flex flex-col transition-all duration-500 ${showSidebar ? 'left-[320px]' : 'left-0'}`}>
+        <div className="p-6 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shadow-[0_0_15px_rgba(234,88,12,0.4)]">
+              <Cpu className="text-black" size={16} />
+            </div>
+            <div>
+              <h3 className="text-[10px] font-black text-white uppercase tracking-widest">V12_CORE</h3>
+              <span className="text-[7px] font-bold text-orange-500 uppercase">Neural Link Active</span>
+            </div>
+          </div>
+          <button onClick={() => setShowSettingsDrawer(true)} className="p-2 text-zinc-600 hover:text-orange-500 transition-colors">
+            <Settings size={14} />
+          </button>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex bg-black/40 border border-zinc-900 rounded-lg p-1 gap-1">
-            {(['CODE', 'PREVIEW', 'SPLIT'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1 rounded text-[8px] font-black uppercase transition-all ${
-                  activeTab === tab ? 'bg-orange-500 text-black' : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+          {chatHistory.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] p-4 rounded-2xl text-[11px] font-medium leading-relaxed ${
+                msg.role === 'user' 
+                  ? 'bg-orange-500 text-black rounded-tr-none' 
+                  : 'bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-tl-none'
+              }`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-6 bg-black/40 border-t border-zinc-900">
+          {/* AI Feature Chips moved to sidebar */}
+          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-3 no-scrollbar mb-2">
+            <button 
+              onClick={() => setShowAiFeatures(true)}
+              className="px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-[8px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <Sparkles className="w-2.5 h-2.5 text-blue-400" />
+              AI Features
+            </button>
+            <button 
+              onClick={() => setShowApiVault(true)}
+              className="px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-[8px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all whitespace-nowrap"
+            >
+              Validate API Keys
+            </button>
           </div>
-          <div className="flex gap-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">
-              <button onClick={handleSaveToSupabase} className="hover:text-white transition-colors">Save to Supabase</button>
-              <button onClick={handlePushToGit} className="hover:text-white transition-colors">Push to Git</button>
-           </div>
-           {dispatchStatus === 'LIVE_ON_GITHUB' || dispatchStatus === 'SAVED_TO_VAULT' ? (
-             <button 
-               onClick={handleRetract} 
-               className="px-5 py-2 bg-zinc-900 border border-red-500/30 text-red-500 text-[10px] font-black rounded-lg uppercase hover:bg-red-500/10 transition-all shadow-lg flex items-center gap-2"
-             >
-               <ShieldOff className="w-3 h-3" />
-               Unpublish
-             </button>
-           ) : (
-             <button 
-               onClick={handlePublish} 
-               disabled={dispatchStatus === 'BASHING_UP...' || dispatchStatus === 'RETRACTING...'}
-               className="px-5 py-2 bg-white text-black text-[10px] font-black rounded-lg uppercase hover:bg-zinc-200 transition-all shadow-lg disabled:opacity-50"
-             >
-               {dispatchStatus === 'BASHING_UP...' ? 'Bashing...' : 'Publish Live'}
-             </button>
-           )}
+
+          <div className="relative">
+            <textarea 
+              value={chatInput}
+              onChange={(e) => {
+                setChatInput(e.target.value);
+                if (validationErrors.chat) validateField('chat', e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Command the Agent..."
+              className={`w-full bg-zinc-900/50 border ${validationErrors.chat ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl px-4 py-3 text-[11px] outline-none focus:border-orange-500/50 transition-all pr-12 min-h-[80px] resize-none`}
+            />
+            <div className="absolute right-2 bottom-2 flex flex-col gap-2">
+              <button 
+                onClick={handleSendMessage}
+                className="p-2 text-orange-500 hover:text-white transition-colors"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex gap-2">
+              <button 
+                onClick={toggleFocusMode}
+                className={`p-2 rounded-lg transition-all ${isFocusMode ? 'bg-orange-500/20 text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
+                title="Toggle Focus Mode (Alt+F)"
+              >
+                <Eye size={16} />
+              </button>
+              <button 
+                onClick={toggleMic}
+                className={`p-2 rounded-lg transition-all ${isListening ? 'bg-orange-500/20 text-orange-500 animate-pulse' : 'text-zinc-600 hover:text-zinc-400'}`}
+              >
+                <Mic size={16} />
+              </button>
+              <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-2 rounded-lg transition-all ${attachment ? 'text-orange-500' : 'text-zinc-600 hover:text-orange-500'}`}
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            
+            <div className="flex bg-zinc-900/50 rounded-lg p-1 gap-1 border border-[#222]">
+              {['GEMINI', 'CHATGPT'].map(m => (
+                <button 
+                  key={m} 
+                  onClick={() => setModel(m as any)} 
+                  className={`px-2 py-1 rounded-md text-[8px] font-bold transition-all ${model === m ? 'bg-[#ea580c] text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {attachment && (
+            <div className="mt-3 flex items-center gap-2 px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded-md animate-in fade-in slide-in-from-left-2">
+              <span className="text-[9px] text-orange-500 font-bold truncate max-w-[150px]">{attachment.name}</span>
+              <button onClick={() => setAttachment(null)} className="text-orange-500 hover:text-white transition-colors">
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          {validationErrors.chat && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest mt-2 ml-1">{validationErrors.chat}</p>}
+        </div>
+
+        {/* MINI TELEMETRY */}
+        <div className="p-4 grid grid-cols-2 gap-2 border-t border-zinc-900 bg-black/20">
+          <div className="p-3 bg-black/40 rounded-xl border border-zinc-800/50">
+            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Sync</p>
+            <p className="text-[10px] font-black text-orange-500">98.4%</p>
+          </div>
+          <div className="p-3 bg-black/40 rounded-xl border border-zinc-800/50">
+            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Flow</p>
+            <p className="text-[10px] font-black text-white">STEADY</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* MIDDLE COLUMN: MISSION CONTROL / PUBLISH UI */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-8 border-r border-zinc-900">
-          {creatorSubTab === 'MISSION CONTROL' ? (
-              <div className="max-w-3xl mx-auto space-y-12">
-                {/* AGENT STATUS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Cpu className="text-orange-500" size={20} />
-                      <span className="text-[8px] font-black text-orange-500 uppercase px-2 py-0.5 bg-orange-500/10 rounded-full animate-pulse">Active</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Neural Agent</p>
-                      <p className="text-lg font-black text-white uppercase tracking-tighter">V12_CORE</p>
-                    </div>
-                  </div>
-                  <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Activity className="text-zinc-600" size={20} />
-                      <span className="text-[8px] font-black text-zinc-600 uppercase px-2 py-0.5 bg-zinc-900 rounded-full">98.4%</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Sync Rate</p>
-                      <p className="text-lg font-black text-white uppercase tracking-tighter">Optimal</p>
-                    </div>
-                  </div>
-                  <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Shield className="text-zinc-600" size={20} />
-                      <span className="text-[8px] font-black text-zinc-600 uppercase px-2 py-0.5 bg-zinc-900 rounded-full">Secure</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Encryption</p>
-                      <p className="text-lg font-black text-white uppercase tracking-tighter">AES-256</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SYSTEM METRICS */}
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">System Telemetry</h3>
-                    <div className="flex gap-2">
-                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-                      <div className="w-2 h-2 rounded-full bg-orange-500" />
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                      { label: 'Neural Processing', value: 74, color: 'bg-orange-500' },
-                      { label: 'Memory Allocation', value: 42, color: 'bg-zinc-700' },
-                      { label: 'Network Throughput', value: 89, color: 'bg-zinc-800' }
-                    ].map((metric) => (
-                      <div key={metric.label} className="space-y-2">
-                        <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                          <span className="text-zinc-500">{metric.label}</span>
-                          <span className="text-zinc-300">{metric.value}%</span>
-                        </div>
-                        <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${metric.color} transition-all duration-1000`} 
-                            style={{ width: `${metric.value}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-          ) : (
-            <div className="max-w-2xl mx-auto w-full mt-12 space-y-8">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Command Bridge V12</h2>
-                <p className="text-zinc-600 text-sm">The definitive Architect’s Bridge for Sovereign Dispatch.</p>
-              </div>
-              
-              <div className="p-8 bg-[#080808] border border-orange-500/20 rounded-3xl backdrop-blur-xl space-y-8">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-orange-500 text-[10px] font-black uppercase tracking-widest">Sovereign Dispatch</h3>
-                  <span className={`text-[9px] font-bold ${dispatchStatus === 'BASHING_UP...' ? 'text-orange-400 animate-pulse' : 'text-zinc-600'}`}>
-                    {dispatchStatus}
-                  </span>
-                </div>
-
-                <div className="flex gap-4">
-                  {/* STEP 1: SEND TO GITHUB */}
-                  <button 
-                    onClick={() => {
-                      setDispatchStatus('STAGED_FOR_DISPATCH');
-                      setTerminal(prev => prev + `\n[System]: Assets staged for dispatch. Ready for Bash.`);
-                    }}
-                    className="flex-1 py-4 bg-zinc-900 border border-zinc-800 rounded-xl text-[10px] font-bold text-zinc-400 hover:border-orange-500/50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Code className="w-3.5 h-3.5" />
-                    1. STAGE TO GIT
-                  </button>
-
-                  {/* STEP 2: BASH UP (THE PUSH) */}
-                  <button 
-                    onClick={handlePublish}
-                    disabled={dispatchStatus === 'BASHING_UP...' || dispatchStatus === 'RETRACTING...'}
-                    className="flex-1 py-4 bg-[#ea580c] text-black rounded-xl text-[10px] font-black uppercase shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <Zap className={`w-3.5 h-3.5 fill-black ${dispatchStatus === 'BASHING_UP...' ? 'animate-pulse' : ''}`} />
-                    {dispatchStatus === 'BASHING_UP...' ? '🔨 BASHING...' : '2. BASH UP NOW'}
-                  </button>
-                </div>
-
-                {dispatchStatus === 'DISPATCH_SUCCESSFUL. MISSION_COMPLETE.' && (
-                  <button 
-                    onClick={handleRetract}
-                    className="w-full py-4 bg-zinc-900 border border-red-500/30 text-red-500 rounded-xl text-[10px] font-black uppercase hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
-                  >
-                    <ShieldOff className="w-3.5 h-3.5" />
-                    UNPUBLISH / RETRACT MISSION
-                  </button>
-                )}
-
-                <div className="h-px bg-zinc-900"></div>
-
-                <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-zinc-800">
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-zinc-500 font-bold uppercase">Visibility Target</span>
-                    <p className="text-[9px] text-zinc-600 uppercase">{isPublic ? 'Public GitHub' : 'Private Vault'}</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsPublic(!isPublic)}
-                    className={`px-6 py-2 rounded-full text-[10px] font-black transition-all ${isPublic ? 'bg-orange-500 text-black shadow-[0_0_15px_#ea580c]' : 'bg-zinc-800 text-zinc-600'}`}
-                  >
-                    {isPublic ? 'PUBLIC' : 'PRIVATE'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-2">
-                  <Github className="w-5 h-5 text-zinc-600" />
-                  <p className="text-[10px] font-bold text-white uppercase">GitHub Sync</p>
-                  <p className="text-[9px] text-zinc-700">Auto-push to main branch enabled.</p>
-                </div>
-                <div className="p-6 bg-[#050505] border border-zinc-900 rounded-2xl space-y-2">
-                  <Database className="w-5 h-5 text-zinc-600" />
-                  <p className="text-[10px] font-bold text-white uppercase">Supabase Backup</p>
-                  <p className="text-[9px] text-zinc-700">Real-time DB snapshots active.</p>
-                </div>
-              </div>
+      {/* THE FORGE (Main Build Preview) */}
+      <div className={`main-preview-area flex-1 flex flex-col transition-all duration-500 ${showSidebar ? 'ml-[600px]' : 'ml-[320px]'}`}>
+        <div className="flex items-center justify-between mb-8">
+          <div className="space-y-1">
+            <h1 className="page-title">The Forge</h1>
+            <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.3em]">Live Neural Construction Environment</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex bg-black/40 border border-zinc-900 rounded-xl p-1 gap-1">
+              {(['CODE', 'PREVIEW', 'SPLIT'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${
+                    activeTab === tab ? 'bg-orange-500 text-black shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
-          )}
+            <button 
+              onClick={handlePublish}
+              className="px-6 py-2 bg-white text-black text-[10px] font-black rounded-xl uppercase hover:bg-orange-500 hover:text-white transition-all shadow-xl"
+            >
+              Deploy to Nexus
+            </button>
+          </div>
         </div>
 
-        {/* COLUMN 2: CODE VIEW */}
-        {(activeTab === 'CODE' || activeTab === 'SPLIT') && (
-          <div className={`${activeTab === 'SPLIT' ? 'w-[400px]' : 'w-[500px]'} bg-[#050505] border-l border-zinc-900 flex flex-col animate-in slide-in-from-right duration-300`}>
-            <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">gatekeeper.py</span>
-              <Code size={14} className="text-zinc-700" />
-            </div>
-            <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-zinc-500">
-              <pre className="text-orange-500/60">
-{`# COMMANDNEXUS GATEKEEPER ENGINE v1.0 (2026 Build)
-# Integration: Firebase Auth + Firestore + Stripe/Crypto API
+        <div className="flex-1 flex flex-col gap-6">
+          {/* PREVIEW CONTAINER */}
+          <div className="flex-1 bg-[#050505] rounded-3xl border border-zinc-900 overflow-hidden relative group shadow-2xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#111_0%,_#000_100%)]" />
+            
+            <div className="relative h-full flex items-center justify-center p-12">
+              {/* Simulated Device */}
+              <div className="w-full max-w-[320px] aspect-[9/19] bg-[#020202] border border-zinc-800 rounded-[48px] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col relative ring-8 ring-zinc-900/50">
+                <div className="h-6 bg-zinc-900 flex items-center justify-center border-b border-zinc-800">
+                  <div className="w-12 h-3 bg-black rounded-full" />
+                </div>
+                <div className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                  <MCL_Logo size="sm" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-2/3 bg-zinc-900 rounded" />
+                    <div className="h-2 w-full bg-zinc-900/50 rounded" />
+                  </div>
+                  <div className="h-40 bg-orange-500/5 rounded-2xl border border-orange-500/10 flex items-center justify-center">
+                    <Zap className="text-orange-500/20 w-12 h-12" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-20 bg-zinc-900/50 rounded-xl" />
+                    <div className="h-20 bg-zinc-900/50 rounded-xl" />
+                  </div>
+                </div>
+                <div className="h-12 bg-zinc-900/50 border-t border-zinc-800" />
+              </div>
 
-import firebase_admin
-from firebase_admin import credentials, firestore
-from google.cloud import aiplatform
-
-# Initialize the Nexus Core Database
-db = firestore.client()
-
-def register_member(user_id, email, path_selection):
-    """
-    path_selection: 'PAY_ACCESS' or 'LEARN_EARN'
-    """
-    user_ref = db.collection('members').document(user_id)
-    
-    # Define the starting profile
-    profile = {
-        "email": email,
-        "identity_verified": True,
-        "nexus_status": "ACTIVE",
-        "current_badge": "WHITE",  # Default starting badge
-        "path": path_selection,
-        "credits_earned": 0.0,
-        "affiliate_referrals": 0
-    }
-
-    if path_selection == 'PAY_ACCESS':
-        # Trigger Stripe/Crypto Checkout Session
-        pass`}
-              </pre>
-            </div>
-          </div>
-        )}
-
-        {/* COLUMN 3: PREVIEW PANE (TERMINAL) */}
-        {(activeTab === 'PREVIEW' || activeTab === 'SPLIT') && (
-          <div className={`${activeTab === 'SPLIT' ? 'w-[400px]' : 'w-[500px]'} bg-[#050505] border-l border-zinc-900 flex flex-col animate-in slide-in-from-right duration-300`}>
-            <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Terminal Output</span>
-              <div className="flex gap-1">
-                <div className="w-2 h-2 rounded-full bg-red-500/20" />
-                <div className="w-2 h-2 rounded-full bg-yellow-500/20" />
-                <div className="w-2 h-2 rounded-full bg-green-500/20" />
+              {/* Build Status */}
+              <div className="absolute bottom-8 left-8 right-8 p-6 bg-black/80 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Synthesis</span>
+                  </div>
+                  <span className="text-[10px] font-black text-orange-500">94%</span>
+                </div>
+                <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-500 w-[94%] shadow-[0_0_10px_#ea580c]" />
+                </div>
               </div>
             </div>
-            <div className="flex-1 p-6 font-mono text-[11px] overflow-y-auto custom-scrollbar text-orange-500/80 whitespace-pre-wrap relative">
-              {isLoading && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                  <PreviewLoading />
+          </div>
+
+          {/* TERMINAL (The Forge Sub-section) */}
+          <div className="h-48 bg-[#050505] rounded-3xl border border-zinc-900 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-zinc-900 flex items-center justify-between bg-zinc-900/20">
+              <div className="flex items-center gap-3">
+                <Terminal size={14} className="text-zinc-600" />
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Build Logs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
+                <span className="text-[8px] font-bold text-green-500 uppercase">System Optimal</span>
+              </div>
+            </div>
+            <div className="flex-1 p-6 font-mono text-[10px] text-zinc-500 overflow-y-auto custom-scrollbar">
+              {terminal.split('\n').map((line, i) => (
+                <div key={i} className={line.includes('[System]') ? 'text-orange-500' : ''}>
+                  {line}
                 </div>
-              )}
-              {terminal}
-              <div ref={terminalEndRef} />
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* SETTINGS DRAWER */}
+      <div className={`settings-drawer h-full w-[400px] border-l border-zinc-800 p-8 flex flex-col ${showSettingsDrawer ? 'right-0' : '-right-[400px]'}`}>
+        <div className="flex items-center justify-between mb-12">
+          <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <Settings className="text-orange-500" /> System Config
+          </h2>
+          <button onClick={() => setShowSettingsDrawer(false)} className="p-2 text-zinc-600 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Neural Model</label>
+            <select 
+              value={model}
+              onChange={(e) => setModel(e.target.value as any)}
+              className="w-full bg-black border border-zinc-800 text-zinc-300 p-4 rounded-xl outline-none focus:border-orange-500/50"
+            >
+              <option value="GEMINI">GEMINI 1.5 PRO</option>
+              <option value="CHATGPT">GPT-4 TURBO</option>
+            </select>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Interface Mode</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl text-[10px] font-black text-orange-500 uppercase">Dark Matter</button>
+              <button className="p-4 bg-black border border-zinc-800 rounded-xl text-[10px] font-black text-zinc-600 uppercase">Solar Flare</button>
+            </div>
+          </div>
+
+          <div className="p-6 bg-orange-500/5 border border-orange-500/20 rounded-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="text-orange-500" size={18} />
+              <h4 className="text-[10px] font-black text-white uppercase">Sovereign Shield</h4>
+            </div>
+            <p className="text-[9px] text-zinc-500 leading-relaxed mb-4">Automatic competitive displacement and offensive growth patterns are currently active.</p>
+            <button className="w-full py-3 bg-orange-500 text-black text-[9px] font-black rounded-lg uppercase">Configure Shield</button>
+          </div>
+        </div>
+
+        <div className="mt-auto pt-8 border-t border-zinc-900">
+          <button className="w-full py-4 bg-zinc-900 text-zinc-500 text-[10px] font-black rounded-xl uppercase hover:text-white transition-all">
+            Reset Mainframe
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -935,108 +1239,25 @@ def register_member(user_id, email, path_selection):
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const renderMarketingView = () => {
-    const handlePlatformToggle = (platformId: string) => {
-      if (!socialLogins[platformId]) {
-        setActiveLoginModal(platformId);
-        return;
-      }
-      setSelectedPlatforms((prev: any) => ({
-        ...prev,
-        [platformId]: !prev[platformId]
-      }));
-    };
+  const renderMarketingView = () => (
+    <div className="animate-in fade-in duration-500 space-y-12">
+      <div className="space-y-4">
+        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Marketing Hub</h2>
+        <p className="text-zinc-500 text-lg font-medium">Deploy neural offensives and scale your reach across the network.</p>
+      </div>
+      <SovereignLaunchpad />
+    </div>
+  );
 
-    const handlePromoteFromGallery = (item: any) => {
-      setSelectedMedia(item);
-      setMarketingTab('create');
-      setPublishSuccess(false);
-    };
-
-    const handlePublish = () => {
-      setIsPublishing(true);
-      setPublishSuccess(false);
-      setTerminal(prev => prev + `\n\n[System]: INITIATING_DISPATCH_SEQUENCE...\n[System]: TARGET_PLATFORMS: ${Object.entries(selectedPlatforms).filter(([_, v]) => v).map(([k]) => k.toUpperCase()).join(', ')}\n[System]: ENCRYPTING_PAYLOAD...\n[System]: DISPATCHING_NEURAL_ASSETS...`);
-      
-      setTimeout(() => {
-        setIsPublishing(false);
-        setPublishSuccess(true);
-        setTerminal(prev => prev + `\n[System]: DISPATCH_SUCCESSFUL. MISSION_COMPLETE.`);
-        setTimeout(() => setPublishSuccess(false), 3000);
-      }, 2000);
-    };
-
-    const handleSaveSocialLogin = () => {
-      if (activeLoginModal) {
-        setSocialLogins(prev => ({
-          ...prev,
-          [activeLoginModal]: { ...loginInput }
-        }));
-        setTerminal(prev => prev + `\n[System]: SECURE_LINK_ESTABLISHED: ${activeLoginModal.toUpperCase()}\n[System]: IDENTITY_VERIFIED: ${loginInput.username}`);
-        setActiveLoginModal(null);
-        setLoginInput({ username: '', apiKey: '' });
-      }
-    };
-
-    const handleDispatch = async () => {
-      if (!targetDomain) {
-        alert("Please specify a target domain.");
-        return;
-      }
-      setIsDeployingDispatcher(true);
-      const dispatchId = Date.now().toString();
-      
-      const logToSupabase = async (message: string, type: 'INFO' | 'ERROR' | 'QUERY', details?: any) => {
-        const logEntry = {
-          dispatch_id: dispatchId,
-          target_domain: targetDomain,
-          message,
-          type,
-          details,
-          timestamp: new Date().toISOString()
-        };
+  const _deprecated_renderMarketingView = () => null;
         
-        const { error } = await supabase.from('nexus_scraper_logs').insert([logEntry]);
-        if (error) console.warn("Log insertion failed:", error.message);
-      };
 
-      setTerminal(prev => prev + `\n\n[System]: INITIATING_MARKET_DISPATCH...\n[System]: TARGET_DOMAIN: ${targetDomain}\n[System]: TARGET_SOURCES: ${targetSources}\n[System]: SCRAMBLING_AGENTS...\n[System]: GATHERING_INTEL...`);
-      
-      await logToSupabase(`Initiating dispatch for ${targetDomain}`, 'INFO', { targetSources });
 
-      try {
-        // Step 1: Visit URLs
-        const sources = targetSources.split(',').map(s => s.trim());
-        for (const source of sources) {
-          const url = `https://${source}`;
-          setTerminal(prev => prev + `\n[System]: VISITING: ${url}`);
-          await logToSupabase(`Visiting URL: ${url}`, 'INFO', { url });
-          
-          // Step 2: Query Elements
-          const elements = ['div.comment', 'span.mention', 'a.competitor-link'];
-          for (const el of elements) {
-            setTerminal(prev => prev + `\n[System]: QUERYING_ELEMENT: ${el}`);
-            await logToSupabase(`Querying element: ${el}`, 'QUERY', { url, element: el });
-          }
-        }
 
-        // Simulate scraping logic
-        const newLeads = [
-          { 
-            text: `Found mention of ${targetDomain} on ${sources[0]}: "Looking for a faster alternative to ${targetDomain}."`, 
-            source: `https://${sources[0]}`, 
-            timestamp: new Date().toISOString() 
-          },
-          { 
-            text: `Critical feedback for ${targetDomain} detected: "The pricing for ${targetDomain} just went up again."`, 
-            source: `https://${sources[1] || sources[0]}`, 
-            timestamp: new Date().toISOString() 
-          }
-        ];
 
-        // Store in Supabase nexus_market_leads table
+        // Store in Supabase v12_market_leads table
         const { data, error } = await supabase
-          .from('nexus_market_leads')
+          .from('v12_market_leads')
           .insert(newLeads.map(lead => ({
             text: lead.text,
             source: lead.source,
@@ -1054,7 +1275,7 @@ def register_member(user_id, email, path_selection):
           setMarketLeads(prev => [...(data || []), ...prev]);
         }
         
-        setTerminal(prev => prev + `\n[System]: DISPATCH_SUCCESSFUL: Intelligence gathered from ${targetDomain}.\n[System]: LEADS_INJECTED_INTO_NEXUS.`);
+        setTerminal(prev => prev + `\n[System]: DISPATCH_SUCCESSFUL: Intelligence gathered from ${targetDomain}.\n[System]: LEADS_INJECTED_INTO_VAULT.`);
         alert(`Dispatch Successful: Scrambling agents to ${targetDomain}. Leads stored in Supabase.`);
       } catch (error: any) {
         console.error("Dispatch failed:", error);
@@ -1093,30 +1314,38 @@ def register_member(user_id, email, path_selection):
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Username / Email</label>
-                <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                <div className={`flex items-center gap-3 p-3 bg-black/40 border ${validationErrors.username ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl focus-within:border-orange-500/50`}>
                   <User size={16} className="text-zinc-700" />
                   <input 
                     type="text" 
                     placeholder={`Enter ${platform.name} username`}
                     value={loginInput.username}
-                    onChange={(e) => setLoginInput(prev => ({ ...prev, username: e.target.value }))}
+                    onChange={(e) => {
+                      setLoginInput(prev => ({ ...prev, username: e.target.value }));
+                      if (validationErrors.username) validateField('username', e.target.value);
+                    }}
                     className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
                   />
                 </div>
+                {validationErrors.username && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest ml-1">{validationErrors.username}</p>}
               </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Access Token / Password</label>
-                <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                <div className={`flex items-center gap-3 p-3 bg-black/40 border ${validationErrors.apiKey ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl focus-within:border-orange-500/50`}>
                   <Lock size={16} className="text-zinc-700" />
                   <input 
                     type="password" 
                     placeholder="Paste secure token..."
                     value={loginInput.apiKey}
-                    onChange={(e) => setLoginInput(prev => ({ ...prev, apiKey: e.target.value }))}
+                    onChange={(e) => {
+                      setLoginInput(prev => ({ ...prev, apiKey: e.target.value }));
+                      if (validationErrors.apiKey) validateField('apiKey', e.target.value);
+                    }}
                     className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
                   />
                 </div>
+                {validationErrors.apiKey && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest ml-1">{validationErrors.apiKey}</p>}
               </div>
             </div>
 
@@ -1196,9 +1425,14 @@ def register_member(user_id, email, path_selection):
                           <input 
                             type="number" 
                             value={budget}
-                            onChange={(e) => setBudget(Number(e.target.value))}
-                            className="w-full p-3 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none text-zinc-300 text-sm"
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setBudget(val);
+                              validateField('budget', val);
+                            }}
+                            className={`w-full p-3 bg-black/40 border ${validationErrors.budget ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl focus:border-orange-500/50 outline-none text-zinc-300 text-sm`}
                           />
+                          {validationErrors.budget && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest ml-1">{validationErrors.budget}</p>}
                         </div>
                         <div className="space-y-2">
                           <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Campaign Objective</label>
@@ -1308,29 +1542,37 @@ def register_member(user_id, email, path_selection):
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Competitor Domain</label>
-                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                        <div className={`flex items-center gap-3 p-3 bg-black/40 border ${validationErrors.domain ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl focus-within:border-orange-500/50`}>
                           <Globe size={16} className="text-zinc-700" />
                           <input 
                             type="text" 
                             value={targetDomain}
-                            onChange={(e) => setTargetDomain(e.target.value)}
+                            onChange={(e) => {
+                              setTargetDomain(e.target.value);
+                              if (validationErrors.domain) validateField('domain', e.target.value);
+                            }}
                             className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
                             placeholder="competitor.com"
                           />
                         </div>
+                        {validationErrors.domain && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest ml-1">{validationErrors.domain}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Target Forums / Threads</label>
-                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
+                        <div className={`flex items-center gap-3 p-3 bg-black/40 border ${validationErrors.sources ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl focus-within:border-orange-500/50`}>
                           <MessageSquare size={16} className="text-zinc-700" />
                           <input 
                             type="text" 
                             value={targetSources}
-                            onChange={(e) => setTargetSources(e.target.value)}
+                            onChange={(e) => {
+                              setTargetSources(e.target.value);
+                              if (validationErrors.sources) validateField('sources', e.target.value);
+                            }}
                             className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
                             placeholder="reddit.com/r/design, twitter.com"
                           />
                         </div>
+                        {validationErrors.sources && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest ml-1">{validationErrors.sources}</p>}
                       </div>
                       <button 
                         onClick={handleDispatch}
@@ -1346,7 +1588,7 @@ def register_member(user_id, email, path_selection):
                     <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Growth Shield Status</h3>
                     <div className="space-y-3">
                       {[
-                        { label: 'Auto-Reply (AI)', status: 'ENABLED', color: 'text-green-500' },
+                        { label: 'Auto-Reply (AI)', status: 'ENABLED', color: 'text-orange-500' },
                         { label: 'Trend Hijacking', status: 'MONITORING', color: 'text-orange-500' },
                         { label: 'Hiring Signals', status: 'SCANNING', color: 'text-blue-500' }
                       ].map((item, i) => (
@@ -1396,201 +1638,20 @@ def register_member(user_id, email, path_selection):
           )}
 
           {marketingTab === 'create' && (
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Create Post or Ad</h2>
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-orange-500/10 text-orange-500 rounded-full border border-orange-500/20">
-                  <TrendingUp size={14} />
-                  {budget > 0 ? `Paid Campaign ($${budget}/day)` : 'Free Organic Post'}
+            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">Sovereign Launchpad</h2>
+                  <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Neural Asset Deployment & Distribution</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                    <span className="text-[10px] text-orange-500 font-black uppercase tracking-widest">V12 ENGINE ACTIVE</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
-                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Media Attachment</h3>
-                    {selectedMedia ? (
-                      <div className="relative rounded-xl overflow-hidden group border border-zinc-800">
-                        <img src={selectedMedia.url} alt="Selected" className="w-full h-64 object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm">
-                          <button 
-                            onClick={() => setSelectedMedia(null)}
-                            className="px-4 py-2 bg-red-500/20 text-red-500 border border-red-500/50 font-black uppercase text-[10px] tracking-widest rounded-lg hover:bg-red-500 hover:text-white transition-all"
-                          >
-                            Remove Media
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-zinc-900 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-zinc-900/30 hover:border-orange-500/30 transition-all cursor-pointer" onClick={() => setMarketingTab('gallery')}>
-                        <div className="flex gap-4 mb-3 text-zinc-700">
-                          <Image size={32} />
-                          <Video size={32} />
-                        </div>
-                        <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Click to select from Gallery</p>
-                        <p className="text-zinc-700 text-[9px] mt-1 font-medium">or drag and drop MP4 / JPG</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Post Copy & Links</h3>
-                      <button 
-                        onClick={generateAdCopy}
-                        disabled={isGeneratingCopy || !keywords}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 border border-orange-500/30 text-orange-500 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-black transition-all disabled:opacity-50"
-                      >
-                        {isGeneratingCopy ? <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div> : <Sparkles size={12} />}
-                        Generate Neural Copy
-                      </button>
-                    </div>
-                    <textarea
-                      rows={5}
-                      placeholder="Write your amazing ad copy here... Don't forget to drop your link!"
-                      value={adCopy}
-                      onChange={(e) => setAdCopy(e.target.value)}
-                      className="w-full p-4 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none resize-none text-zinc-300 text-sm"
-                    ></textarea>
-
-                    {adVariations.length > 0 && (
-                      <div className="mt-6 space-y-4">
-                        <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">Neural Variations</h4>
-                        <div className="grid grid-cols-1 gap-4">
-                          {adVariations.map((v, i) => (
-                            <div key={i} className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl space-y-3 group hover:border-orange-500/30 transition-all">
-                              <div className="flex justify-between items-start">
-                                <h5 className="text-xs font-black text-white uppercase tracking-tight">{v.headline}</h5>
-                                <button 
-                                  onClick={() => setAdCopy(`${v.headline}\n\n${v.body}\n\n${v.cta}`)}
-                                  className="px-2 py-1 bg-orange-500/10 text-orange-500 text-[8px] font-black uppercase rounded border border-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  Apply
-                                </button>
-                              </div>
-                              <p className="text-[11px] text-zinc-400 leading-relaxed">{v.body}</p>
-                              <div className="flex items-center gap-2 text-[9px] font-bold text-orange-500 uppercase">
-                                <TrendingUp size={10} />
-                                {v.cta}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900 space-y-4">
-                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Keywords & Targeting</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Product Description</label>
-                        <textarea 
-                          rows={3}
-                          placeholder="Describe your product or service in detail..." 
-                          value={productDescription}
-                          onChange={(e) => setProductDescription(e.target.value)}
-                          className="w-full p-4 bg-black/40 border border-zinc-800 rounded-xl focus:border-orange-500/50 outline-none resize-none text-zinc-300 text-sm"
-                        ></textarea>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Keywords</label>
-                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-zinc-800 rounded-xl focus-within:border-orange-500/50">
-                          <LinkIcon size={18} className="text-zinc-700" />
-                          <input 
-                            type="text" 
-                            placeholder="e.g. #technology, startup, innovation" 
-                            value={keywords}
-                            onChange={(e) => setKeywords(e.target.value)}
-                            className="flex-1 bg-transparent outline-none text-zinc-300 text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-zinc-700 mt-2 font-medium uppercase tracking-tighter">Our bot will suggest reciprocal tags based on these keywords.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
-                    <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Destinations</h3>
-                    <div className="space-y-2">
-                      {PLATFORMS.map(platform => (
-                        <label key={platform.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedPlatforms[platform.id] ? 'border-orange-500/50 bg-orange-500/5' : 'border-zinc-800 hover:bg-zinc-900/30'}`}>
-                          <input 
-                            type="checkbox" 
-                            className="hidden"
-                            checked={selectedPlatforms[platform.id]}
-                            onChange={() => handlePlatformToggle(platform.id)}
-                          />
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${platform.color} ${!selectedPlatforms[platform.id] && 'opacity-30 grayscale'}`}>
-                            <platform.icon size={16} />
-                          </div>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${selectedPlatforms[platform.id] ? 'text-orange-500' : 'text-zinc-600'}`}>
-                            {platform.name}
-                          </span>
-                          {selectedPlatforms[platform.id] && (
-                            <CheckCircle2 size={16} className="ml-auto text-orange-500" />
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-[#050505] p-6 rounded-2xl border border-zinc-900">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Daily Budget</h3>
-                      <span className="font-black text-lg text-orange-500">${budget}</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      step="5"
-                      value={budget}
-                      onChange={(e) => setBudget(parseInt(e.target.value))}
-                      className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                    />
-                    <div className="flex justify-between text-[8px] text-zinc-700 mt-2 font-black uppercase tracking-widest">
-                      <span>Free Post</span>
-                      <span>$100/day</span>
-                    </div>
-                    {budget === 0 ? (
-                      <div className="mt-4 p-3 bg-green-500/5 border border-green-500/20 text-green-500 rounded-lg text-[9px] font-bold uppercase tracking-tight flex items-start gap-2">
-                        <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
-                        <p>This will be posted organically to your feeds for free.</p>
-                      </div>
-                    ) : (
-                      <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 text-blue-500 rounded-lg text-[9px] font-bold uppercase tracking-tight flex items-start gap-2">
-                        <DollarSign size={14} className="mt-0.5 shrink-0" />
-                        <p>This will be pushed as a sponsored ad to targeted users.</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <button 
-                    onClick={handlePublish}
-                    disabled={isPublishing || Object.values(selectedPlatforms).every(v => !v)}
-                    className={`w-full py-4 rounded-xl text-black font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-2 transition-all ${isPublishing ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-[#ea580c] hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(234,88,12,0.3)]'}`}
-                  >
-                    {isPublishing ? (
-                      <div className="w-4 h-4 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <>
-                        <Send size={16} />
-                        {budget > 0 ? 'Launch Ad Campaign' : 'Post Now'}
-                      </>
-                    )}
-                  </button>
-                  
-                  {publishSuccess && (
-                    <div className="p-3 bg-green-500/10 border border-green-500/30 text-green-500 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 animate-bounce">
-                      <CheckCircle2 size={16} />
-                      Successfully dispatched!
-                    </div>
-                  )}
-                </div>
-              </div>
+              <SovereignLaunchpad />
             </div>
           )}
 
@@ -2016,7 +2077,7 @@ def register_member(user_id, email, path_selection):
           <div className="space-y-12">
             <div className="grid grid-cols-3 gap-6">
               {[
-                { label: "Active Agents", value: "12", trend: "+2" },
+                { label: "Active Agents", value: agents.length.toString(), trend: "+2" },
                 { label: "Neural Uptime", value: "99.9%", trend: "Stable" },
                 { label: "Data Processed", value: "4.2 TB", trend: "+12%" }
               ].map((stat, i) => (
@@ -2050,10 +2111,14 @@ def register_member(user_id, email, path_selection):
             <div className="bg-[#080808] border border-orange-500/10 rounded-2xl p-4 space-y-4 shadow-[0_0_30px_rgba(234,88,12,0.05)]">
               <textarea 
                 value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
+                onChange={(e) => {
+                  setNewPost(e.target.value);
+                  if (validationErrors.post) validateField('post', e.target.value);
+                }}
                 placeholder="Bash a neural update to the global feed..."
-                className="w-full bg-transparent outline-none resize-none text-sm text-zinc-300 placeholder-zinc-700 h-20 font-mono"
+                className={`w-full bg-transparent outline-none resize-none text-sm text-zinc-300 placeholder-zinc-700 h-20 font-mono ${validationErrors.post ? 'border-b border-red-500/50' : ''}`}
               />
+              {validationErrors.post && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.post}</p>}
               <div className="flex items-center justify-between border-t border-zinc-900 pt-4">
                 <div className="flex gap-4">
                   <button className="text-zinc-600 hover:text-orange-500 transition-colors">
@@ -2170,26 +2235,50 @@ def register_member(user_id, email, path_selection):
                       <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#050505] ${
                         agent.status === 'RUNNING' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
                         agent.status === 'ERROR' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
+                        agent.status === 'STOPPED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' :
                         'bg-zinc-600'
                       }`} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <p className="text-sm font-bold text-white">{agent.name}</p>
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${
-                          agent.status === 'RUNNING' ? 'border-green-500/30 text-green-500 bg-green-500/5' :
-                          agent.status === 'ERROR' ? 'border-red-500/30 text-red-500 bg-red-500/5' :
-                          'border-zinc-800 text-zinc-600 bg-zinc-900'
+                        <span className={`text-[9px] font-black px-3 py-1.5 rounded-full border transition-all flex items-center gap-2 shadow-lg ${
+                          agent.status === 'RUNNING' ? 'border-green-500/50 text-green-500 bg-green-500/10 shadow-green-500/5 animate-pulse' :
+                          agent.status === 'ERROR' ? 'border-red-500 text-red-500 bg-red-500/20 shadow-red-500/20 animate-shake' :
+                          agent.status === 'STOPPED' ? 'border-blue-500/30 text-blue-400 bg-blue-500/5' :
+                          'border-zinc-800 text-zinc-500 bg-zinc-900/50'
                         }`}>
-                          {agent.status}
+                          {agent.status === 'RUNNING' && <CheckCircle2 size={12} className="animate-pulse" />}
+                          {agent.status === 'ERROR' && <AlertCircle size={12} className="animate-shake" />}
+                          {agent.status === 'STOPPED' && <PauseCircle size={12} />}
+                          <span className="tracking-[0.1em]">{agent.status}</span>
                         </span>
+                        {agent.status === 'ERROR' && (
+                          <button 
+                            onClick={() => {
+                              const btn = document.activeElement as HTMLButtonElement;
+                              if (btn) btn.disabled = true;
+                              setTerminal(prev => prev + `\n[System]: MANUAL_RETRY_INITIATED: ${agent.name}\n[System]: ANALYZING_FAULT_LOGS...\n[System]: CLEARING_CACHE_BUFFERS...`);
+                              
+                              setTimeout(() => {
+                                setAgents(prev => prev.map(a => a.name === agent.name ? { ...a, status: 'RUNNING' } : a));
+                                setTerminal(prev => prev + `\n[System]: RESTART_SUCCESSFUL: ${agent.name}\n[System]: ALL_SYSTEMS_NOMINAL.`);
+                                if (btn) btn.disabled = false;
+                              }, 1500);
+                            }}
+                            className="px-5 py-2 bg-gradient-to-r from-orange-600 to-orange-400 text-white text-[10px] font-black rounded-xl uppercase hover:from-white hover:to-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_25px_rgba(234,88,12,0.4)] flex items-center gap-2 border border-orange-500/50 active:scale-95 group"
+                          >
+                            <Zap size={12} className="animate-pulse group-hover:animate-spin" />
+                            <span>Retry</span>
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 mt-1">
                         <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Fee: {agent.fee}</p>
                         <div className="flex items-center gap-1.5">
                           <Calendar size={10} className="text-zinc-700" />
                           <span className={`text-[9px] font-black uppercase tracking-widest ${agent.schedule !== 'NONE' ? 'text-orange-500' : 'text-zinc-700'}`}>
-                            {agent.schedule}
+                            {agent.schedule.startsWith('CRON:') ? 'CUSTOM CRON' : agent.schedule}
                           </span>
                         </div>
                         {agent.schedule.startsWith('CRON:') && (
@@ -2204,21 +2293,24 @@ def register_member(user_id, email, path_selection):
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       {schedulingAgent === agent.name ? (
-                        <div className="flex flex-col gap-3 bg-black/60 border border-zinc-800 rounded-2xl p-4 animate-in slide-in-from-right-4 min-w-[240px]">
+                        <div className="flex flex-col gap-4 bg-[#0a0a0a] border border-orange-500/30 rounded-2xl p-5 animate-in slide-in-from-right-4 min-w-[280px] shadow-[0_0_40px_rgba(0,0,0,0.8)] z-50">
                           <div className="flex items-center justify-between gap-4">
-                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Schedule Mode</span>
-                            <div className="flex bg-zinc-900 rounded-lg p-1">
+                            <div className="flex items-center gap-2">
+                              <Clock size={12} className="text-orange-500" />
+                              <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Scheduler</span>
+                            </div>
+                            <div className="flex bg-zinc-900/50 rounded-lg p-1 border border-zinc-800">
                               <button 
                                 onClick={() => setIsCustomCron(false)}
-                                className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${!isCustomCron ? 'bg-orange-500 text-black' : 'text-zinc-600 hover:text-zinc-400'}`}
+                                className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${!isCustomCron ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20' : 'text-zinc-600 hover:text-zinc-400'}`}
                               >
-                                Intervals
+                                Presets
                               </button>
                               <button 
                                 onClick={() => setIsCustomCron(true)}
-                                className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${isCustomCron ? 'bg-orange-500 text-black' : 'text-zinc-600 hover:text-zinc-400'}`}
+                                className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${isCustomCron ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20' : 'text-zinc-600 hover:text-zinc-400'}`}
                               >
-                                Custom
+                                Cron
                               </button>
                             </div>
                           </div>
@@ -2251,6 +2343,23 @@ def register_member(user_id, email, path_selection):
                                   autoFocus
                                 />
                               </div>
+                              
+                              <div className="flex flex-wrap gap-1.5">
+                                {[
+                                  { label: 'Hourly', pattern: '0 * * * *' },
+                                  { label: 'Midnight', pattern: '0 0 * * *' },
+                                  { label: 'Mon-Fri', pattern: '0 0 * * 1-5' }
+                                ].map(p => (
+                                  <button 
+                                    key={p.label}
+                                    onClick={() => setCustomCron(p.pattern)}
+                                    className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[7px] font-black text-zinc-500 hover:text-orange-500 hover:border-orange-500/30 transition-all uppercase"
+                                  >
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+
                               <div className="flex gap-2">
                                 <button 
                                   onClick={() => {
@@ -2335,33 +2444,195 @@ def register_member(user_id, email, path_selection):
     </div>
   );
 
-  const renderProfilePage = () => (
-    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#010101] nexus-grid-bg">
-      <div className="nexus-container galaxy-bg min-h-screen">
-        <div className="profile-header">
-          <div className="avatar-orb">
-            <img src="https://picsum.photos/seed/commander/200/200" alt="Commander" referrerPolicy="no-referrer" />
-            <div className="status-ring online"></div>
+  const renderLandingTest = () => (
+    <div className="min-h-screen bg-black">
+      {/* Hero Section */}
+      <section className="relative py-24 px-8 flex flex-col items-center text-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 to-transparent" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-xs text-zinc-400 mb-8">
+            <Zap size={12} className="text-orange-500" />
+            <span>NEW: NEURAL ENGINE 2.0 IS LIVE</span>
           </div>
-          <div className="profile-info">
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase">COMMANDER [USERNAME]</h1>
-            <p className="rank text-orange-500 font-bold uppercase tracking-widest text-xs mt-2">Rank: Lead Architect | Net: CommandNexus Alpha</p>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase italic">
+            Launch Your App <br />
+            <span className="text-orange-500 text-outline">In Seconds</span>
+          </h1>
+          <p className="max-w-2xl text-zinc-400 text-lg mb-10 leading-relaxed">
+            The first all-in-one platform designed for creators who demand speed, sovereignty, and scale. Build, market, and monetize from a single dashboard.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button className="bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-orange-500 hover:text-white transition-all">
+              GET STARTED
+            </button>
+            <button className="border border-zinc-700 px-8 py-4 rounded-full font-bold hover:bg-zinc-900 transition-all">
+              VIEW DEMO
+            </button>
           </div>
         </div>
-        
-        <div className="stats-grid">
-          <div className="stat-card"><h3>Missions</h3><p>42</p></div>
-          <div className="stat-card"><h3>Neural Credits</h3><p>{credits}</p></div>
-          <div className="stat-card"><h3>Uptime</h3><p>99.9%</p></div>
+      </section>
+
+      {/* Feature Grid */}
+      <section className="py-20 px-12 grid md:grid-cols-3 gap-8 border-t border-zinc-900">
+        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-zinc-800/50">
+          <Shield className="text-orange-500 mb-4" />
+          <h3 className="font-bold mb-2 uppercase">Sovereign Data</h3>
+          <p className="text-sm text-zinc-500">You own your keys, your members, and your content. No middlemen.</p>
+        </div>
+        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-zinc-800/50">
+          <Rocket className="text-orange-500 mb-4" />
+          <h3 className="font-bold mb-2 uppercase">Neural Growth</h3>
+          <p className="text-sm text-zinc-500">Automated marketing tools that push your app to the top of the chain.</p>
+        </div>
+        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-zinc-800/50">
+          <Zap className="text-orange-500 mb-4" />
+          <h3 className="font-bold mb-2 uppercase">V12 Speed</h3>
+          <p className="text-sm text-zinc-500">Engineered for high-frequency deployment. Build at the speed of thought.</p>
+        </div>
+      </section>
+    </div>
+  );
+
+  const renderDatabaseView = () => (
+    <div className="flex-1 flex flex-col bg-[#010101] overflow-y-auto custom-scrollbar">
+      <div className="h-14 border-b border-[#181818] bg-[#050505]/80 backdrop-blur-md px-8 flex items-center gap-4 sticky top-0 z-20">
+        <MCL_Logo size="sm" />
+        <div className="w-px h-4 bg-zinc-800 mx-2" />
+        <h2 className="text-[10px] font-black text-white uppercase tracking-widest">Database Vault</h2>
+        <div className="ml-auto flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isSupabaseConnected ? 'bg-orange-500 shadow-[0_0_10px_#ea580c]' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}`} />
+            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+              {isSupabaseConnected ? 'VAULT_CONNECTED' : 'VAULT_OFFLINE'}
+            </span>
+          </div>
+          <button 
+            onClick={fetchSupabaseData}
+            className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 hover:text-orange-500 transition-all"
+          >
+            <Activity size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-8 max-w-5xl mx-auto w-full space-y-12 pb-10">
+        <div className="space-y-4">
+          <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Data Stream</h2>
+          <p className="text-zinc-500 text-sm font-medium">Real-time intelligence logs from the Supabase Vault.</p>
         </div>
 
-        <div className="bio-section bg-black/40 p-8 rounded-2xl border border-zinc-900 shadow-shield">
-          <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Pilot's Log</h3>
-          <p className="text-zinc-300 italic text-lg leading-relaxed">"Bolding my way through the code. Searching for the next creative galaxy. The V24 Mainframe is humming, and the sky towers are within reach."</p>
+        {!isSupabaseConnected && (
+          <div className="p-8 bg-red-500/5 border border-red-500/20 rounded-3xl space-y-4">
+            <div className="flex items-center gap-3 text-red-500">
+              <AlertCircle size={24} />
+              <h3 className="text-lg font-black uppercase tracking-tighter">Connection Error</h3>
+            </div>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              The application is unable to establish a secure link with your Supabase database. 
+              Please verify your <span className="text-white font-bold">VITE_SUPABASE_URL</span> and <span className="text-white font-bold">VITE_SUPABASE_ANON_KEY</span> in the Secrets panel.
+            </p>
+            <div className="pt-4">
+              <button 
+                onClick={() => setView('SETTINGS')}
+                className="px-6 py-2 bg-red-500 text-white text-[10px] font-black rounded-lg uppercase hover:bg-red-400 transition-all"
+              >
+                Configure Secrets
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-6">
+          <div className="bg-[#050505] border border-zinc-900 rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
+              <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Recent Scraper Logs</h3>
+              <span className="text-[9px] font-bold text-zinc-600 uppercase">{supabaseLogs.length} Entries</span>
+            </div>
+            <div className="divide-y divide-zinc-900 max-h-[600px] overflow-y-auto custom-scrollbar">
+              {supabaseLogs.length > 0 ? (
+                supabaseLogs.map((log, i) => (
+                  <div key={i} className="p-4 hover:bg-orange-500/[0.02] transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${
+                            log.type === 'ERROR' ? 'border-red-500/30 text-red-500 bg-red-500/5' :
+                            log.type === 'QUERY' ? 'border-blue-500/30 text-blue-500 bg-blue-500/5' :
+                            'border-green-500/30 text-green-500 bg-green-500/5'
+                          }`}>
+                            {log.type}
+                          </span>
+                          <span className="text-[10px] font-bold text-zinc-300">{log.message}</span>
+                        </div>
+                        <p className="text-[9px] text-zinc-600 font-medium uppercase tracking-widest">
+                          Domain: {log.target_domain} | ID: {log.dispatch_id}
+                        </p>
+                        {log.details && (
+                          <pre className="text-[8px] text-zinc-700 bg-black/40 p-2 rounded mt-2 font-mono overflow-x-auto">
+                            {JSON.stringify(log.details, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                      <span className="text-[9px] text-zinc-700 font-bold whitespace-nowrap">
+                        {new Date(log.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-12 text-center space-y-4">
+                  <Database className="w-12 h-12 text-zinc-800 mx-auto" />
+                  <p className="text-zinc-600 font-bold uppercase text-[10px] tracking-widest">No logs detected in the mainframe.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {loginMode === 'ADMIN' && (
+            <div className="bg-[#050505] border border-zinc-900 rounded-2xl overflow-hidden">
+              <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
+                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">User Management</h3>
+                <span className="text-[9px] font-bold text-zinc-600 uppercase">{supabaseUsers.length} Users</span>
+              </div>
+              <div className="divide-y divide-zinc-900 max-h-[600px] overflow-y-auto custom-scrollbar">
+                {supabaseUsers.length > 0 ? (
+                  supabaseUsers.map((user) => (
+                    <div key={user.id} className="p-4 hover:bg-orange-500/[0.02] transition-colors">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="text-zinc-700" size={20} />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-white uppercase tracking-tight">{user.username || user.email}</h4>
+                            <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">{user.email}</p>
+                          </div>
+                        </div>
+                        <UserProToggle userId={user.id} initialStatus={user.is_pro} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-12 text-center space-y-4">
+                    <User className="w-12 h-12 text-zinc-800 mx-auto" />
+                    <p className="text-zinc-600 font-bold uppercase text-[10px] tracking-widest">No users found in the vault.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+
+  const renderProfilePage = () => {
+    return <ProfileView />;
+  };
 
   const renderSettingsPage = () => (
     <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#010101]">
@@ -2374,7 +2645,7 @@ def register_member(user_id, email, path_selection):
           <div className="space-y-8">
             <div className="setting-group">
               <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">Visual Interface</label>
-              <select className="nexus-input w-full bg-black border border-zinc-800 text-zinc-300 p-3 rounded-xl outline-none focus:border-orange-500/50 transition-all">
+              <select className="v12-input w-full bg-black border border-zinc-800 text-zinc-300 p-3 rounded-xl outline-none focus:border-orange-500/50 transition-all">
                 <option>Dark Matter (Default)</option>
                 <option>Nebula Pulse</option>
                 <option>Solar Flare</option>
@@ -2382,7 +2653,7 @@ def register_member(user_id, email, path_selection):
             </div>
 
             <div className="setting-group">
-              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">Nexus Sync</label>
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">System Sync</label>
               <div className="toggle-box flex items-center justify-between p-4 bg-black border border-zinc-800 rounded-xl">
                 <span className="text-sm text-zinc-400">Auto-sync missions across all apps</span>
                 <input type="checkbox" defaultChecked className="accent-orange-500 w-5 h-5" />
@@ -2391,7 +2662,7 @@ def register_member(user_id, email, path_selection):
 
             <div className="setting-group">
               <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 block">Security Level</label>
-              <input type="range" min="1" max="10" defaultValue="8" className="nexus-slider w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+              <input type="range" min="1" max="10" defaultValue="8" className="v12-slider w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-orange-500" />
               <div className="flex justify-between mt-2">
                 <span className="text-[9px] text-zinc-700 font-bold uppercase">Shielding: High</span>
                 <span className="text-[9px] text-orange-500 font-black uppercase tracking-widest">Behavioral Firewall Active</span>
@@ -2433,8 +2704,8 @@ def register_member(user_id, email, path_selection):
               <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Authorized Connections</h3>
               <ul className="space-y-4">
                 {[
-                  { name: 'mycanvaslab.com', status: 'ACTIVE', icon: CheckCircle2, color: 'text-green-500' },
-                  { name: 'utubechat.com', status: 'ACTIVE', icon: CheckCircle2, color: 'text-green-500' },
+                  { name: 'mycanvaslab.com', status: 'ACTIVE', icon: CheckCircle2, color: 'text-orange-500' },
+                  { name: 'utubechat.com', status: 'ACTIVE', icon: CheckCircle2, color: 'text-orange-500' },
                   { name: 'hygieneteam.nz', status: 'INACTIVE', icon: Lock, color: 'text-zinc-700' }
                 ].map((limb, i) => (
                   <li key={i} className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
@@ -2664,6 +2935,7 @@ def register_member(user_id, email, path_selection):
     const settingsTabs = [
       { id: 'General', icon: '⚙️', label: 'GENERAL_SYSTEM' },
       { id: 'Neural', icon: '🧠', label: 'PERSONALIZATION' },
+      { id: 'Notifications', icon: '🔔', label: 'NEURAL_ALERTS' },
       { id: 'Security', icon: '🛡️', label: 'SECURITY_VAULT' },
       { id: 'Data', icon: '💾', label: 'DATA_CONTROLS' },
       { id: 'Billing', icon: '💳', label: 'SUBSCRIPTION' },
@@ -2787,7 +3059,7 @@ def register_member(user_id, email, path_selection):
                                 {key.label}
                               </label>
                               {apiKeys[key.id as keyof typeof apiKeys] && (
-                                <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Active</span>
+                                <span className="text-[8px] text-orange-500 font-black uppercase tracking-widest">Active</span>
                               )}
                             </div>
                             <div className="relative">
@@ -2813,6 +3085,56 @@ def register_member(user_id, email, path_selection):
                         >
                           Save & Sync Keys
                         </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsSubTab === 'Notifications' && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">Neural Alert Configuration</h3>
+                    <div className="bg-zinc-900/20 border border-zinc-800 rounded-3xl p-8 space-y-8">
+                      <div className="flex justify-between items-center p-6 bg-black/40 rounded-2xl border border-zinc-800">
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-bold text-white uppercase">Master Email Notifications</span>
+                          <p className="text-[9px] text-zinc-600 uppercase">Enable or disable all outgoing neural alerts.</p>
+                        </div>
+                        <button 
+                          onClick={() => updateNotificationPreferences({ email_notifications_enabled: !notificationPreferences.email_notifications_enabled })}
+                          className={`w-12 h-6 rounded-full transition-all relative ${notificationPreferences.email_notifications_enabled ? 'bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.4)]' : 'bg-zinc-800'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${notificationPreferences.email_notifications_enabled ? 'right-1' : 'left-1'}`} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="flex justify-between items-center p-6 bg-black/40 rounded-2xl border border-zinc-800">
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-white uppercase">Agent Status Alerts</span>
+                            <p className="text-[9px] text-zinc-600 uppercase">Get notified when agents change status (ERROR, RUNNING).</p>
+                          </div>
+                          <button 
+                            onClick={() => updateNotificationPreferences({ agent_status_alerts: !notificationPreferences.agent_status_alerts })}
+                            className={`w-10 h-5 rounded-full transition-all relative ${notificationPreferences.agent_status_alerts ? 'bg-orange-500' : 'bg-zinc-800'}`}
+                          >
+                            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${notificationPreferences.agent_status_alerts ? 'right-0.5' : 'left-0.5'}`} />
+                          </button>
+                        </div>
+
+                        <div className="flex justify-between items-center p-6 bg-black/40 rounded-2xl border border-zinc-800">
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-white uppercase">Marketing Milestones</span>
+                            <p className="text-[9px] text-zinc-600 uppercase">Alerts for campaign launches and performance milestones.</p>
+                          </div>
+                          <button 
+                            onClick={() => updateNotificationPreferences({ marketing_milestone_alerts: !notificationPreferences.marketing_milestone_alerts })}
+                            className={`w-10 h-5 rounded-full transition-all relative ${notificationPreferences.marketing_milestone_alerts ? 'bg-orange-500' : 'bg-zinc-800'}`}
+                          >
+                            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${notificationPreferences.marketing_milestone_alerts ? 'right-0.5' : 'left-0.5'}`} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3156,6 +3478,12 @@ def register_member(user_id, email, path_selection):
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      const isNameValid = validateField('name', contactForm.name);
+      const isEmailValid = validateField('email', contactForm.email);
+      const isMsgValid = validateField('message', contactForm.message);
+
+      if (!isNameValid || !isEmailValid || !isMsgValid) return;
+
       alert(`Message sent to mycanvas@utubemail.com from ${contactForm.email}`);
       setShowContact(false);
       setContactForm({ name: '', email: '', message: '' });
@@ -3179,32 +3507,44 @@ def register_member(user_id, email, path_selection):
               <input 
                 type="text" 
                 value={contactForm.name}
-                onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
-                className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                onChange={(e) => {
+                  setContactForm({...contactForm, name: e.target.value});
+                  if (validationErrors.name) validateField('name', e.target.value);
+                }}
+                className={`w-full bg-black/40 border ${validationErrors.name ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300`}
                 placeholder="Architect Name"
                 required
               />
+              {validationErrors.name && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.name}</p>}
             </div>
             <div className="space-y-2">
               <label className="text-[9px] text-zinc-500 uppercase font-black">Return Email</label>
               <input 
                 type="email" 
                 value={contactForm.email}
-                onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300"
+                onChange={(e) => {
+                  setContactForm({...contactForm, email: e.target.value});
+                  if (validationErrors.email) validateField('email', e.target.value);
+                }}
+                className={`w-full bg-black/40 border ${validationErrors.email ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300`}
                 placeholder="email@example.com"
                 required
               />
+              {validationErrors.email && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.email}</p>}
             </div>
             <div className="space-y-2">
               <label className="text-[9px] text-zinc-500 uppercase font-black">Mission Brief</label>
               <textarea 
                 value={contactForm.message}
-                onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
-                className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 h-32 resize-none"
+                onChange={(e) => {
+                  setContactForm({...contactForm, message: e.target.value});
+                  if (validationErrors.message) validateField('message', e.target.value);
+                }}
+                className={`w-full bg-black/40 border ${validationErrors.message ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 h-32 resize-none`}
                 placeholder="Describe your request..."
                 required
               />
+              {validationErrors.message && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.message}</p>}
             </div>
             <button 
               type="submit"
@@ -3217,6 +3557,44 @@ def register_member(user_id, email, path_selection):
       </div>
     );
   };
+
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { error } = await supabase.from('user_profiles').select('user_id', { count: 'exact', head: true }).limit(1);
+        if (error && error.message.includes('fetch')) setIsOffline(true);
+      } catch (e) {
+        setIsOffline(true);
+      }
+    };
+    checkConnection();
+  }, []);
+
+  if (isOffline) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-10 font-mono">
+        <div className="max-w-md w-full p-10 border border-red-500/30 bg-red-500/5 rounded-[40px] text-center space-y-6">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto border border-red-500/20">
+            <ShieldOff className="text-red-500 animate-pulse" size={40} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">SYSTEM_OFFLINE</h2>
+            <p className="text-zinc-500 text-xs uppercase tracking-widest leading-relaxed">
+              Neural link to Supabase mainframe severed. Check your environment variables or network protocols.
+            </p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full py-4 bg-red-500 text-black font-black rounded-2xl uppercase text-xs tracking-widest hover:scale-105 transition-all"
+          >
+            RETRY_CONNECTION
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthReady) {
     return (
@@ -3397,13 +3775,16 @@ def register_member(user_id, email, path_selection):
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] text-zinc-500 uppercase font-black">New Access Key</label>
+                  <label className="text-[9px] text-zinc-500 uppercase font-black">Neural Access Key</label>
                   <div className="relative">
                     <input 
                       type={showPassword ? "text" : "password"}
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 pr-12"
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        validateField('password', e.target.value);
+                      }}
+                      className={`w-full bg-black/40 border ${validationErrors.password ? 'border-red-500/50' : 'border-zinc-800'} rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-500/50 transition-all text-zinc-300 pr-12`}
                       placeholder="••••••••"
                       required
                     />
@@ -3415,6 +3796,7 @@ def register_member(user_id, email, path_selection):
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {validationErrors.password && <p className="text-[8px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.password}</p>}
                 </div>
                 <button 
                   onClick={() => {
@@ -3441,385 +3823,137 @@ def register_member(user_id, email, path_selection):
   }
 
   return (
-    <div className="flex h-screen w-screen bg-[#020202] text-white font-mono overflow-hidden text-[13px] nexus-grid-bg">
+    <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans">
       {renderAiFeaturesModal()}
       {renderContactModal()}
-      
-      {/* HAMBURGER MENU: Visible on all screens to toggle sidebar */}
-      <button 
-        onClick={() => setShowSidebar(!showSidebar)}
-        className="flex fixed top-6 left-6 z-50 p-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-xl text-orange-500 hover:border-orange-500/50 transition-all"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
 
-      {/* SIDEBAR: The Command Center */}
-      <aside className={`sidebar-container fixed lg:relative flex flex-col border-r border-[#181818] p-6 bg-[#050505] z-40 transition-all duration-300 h-full overflow-y-auto custom-scrollbar ${showSidebar ? 'translate-x-0 w-full lg:w-[420px]' : '-translate-x-full lg:translate-x-0 lg:w-0 p-0 border-none overflow-hidden'}`}>
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <span className="status-led"></span>
-            <h1 className="text-[#ea580c] text-2xl font-black flex items-center gap-3 whitespace-nowrap">💎 MYCANVASLAB</h1>
+      {/* 1. THE COMMAND SIDEBAR (Fixed & Clean) */}
+      <aside className="w-80 border-r border-zinc-800 bg-black p-6 flex flex-col justify-between z-50">
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
+            <MCL_Logo size="sm" />
+            <h1 className="font-black tracking-tighter text-xl italic uppercase">MyCanvasLab</h1>
           </div>
-          <button onClick={() => setShowSidebar(false)} className="lg:hidden p-2 text-zinc-500 hover:text-white">
-            <X className="w-6 h-6" />
+
+          <nav className="space-y-2">
+            <NavButton icon={<User size={18}/>} label="Profile Home" active={view === 'PROFILE'} onClick={() => setView('PROFILE')} />
+            <NavButton icon={<Rocket size={18}/>} label="Marketing Hub" active={view === 'MARKETING'} onClick={() => setView('MARKETING')} color="text-orange-500" />
+            <NavButton icon={<Wallet size={18}/>} label="Vault & Wallet" active={view === 'SETTINGS'} onClick={() => setView('SETTINGS')} />
+            <NavButton icon={<Settings size={18}/>} label="System Config" active={view === 'ACCOUNT'} onClick={() => setView('ACCOUNT')} />
+            <NavButton icon={<Database size={18}/>} label="Database Vault" active={view === 'DATABASE'} onClick={() => setView('DATABASE')} />
+            <NavButton icon={<Globe size={18}/>} label="Landing Test" active={view === 'LANDING_TEST'} onClick={() => setView('LANDING_TEST')} />
+          </nav>
+        </div>
+
+        <div className="space-y-4">
+          <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-mono text-green-500">V12_CORE_NOMINAL</span>
+            </div>
+            <p className="text-[10px] text-zinc-500 leading-tight italic">"Systems synchronized. Ready for deployment, Commander."</p>
+          </div>
+
+          <button 
+            onClick={() => signOut(auth)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-red-500 transition-colors text-[10px] font-black uppercase tracking-widest"
+          >
+            <LogOut size={16} />
+            Terminate Session
           </button>
-        </div>
-
-        {/* THE LOW FUEL WARNING BANNER */}
-        {credits < 500 && (
-          <div className="bg-orange-600/20 border-y border-orange-500/50 p-3 mb-6 flex justify-between items-center animate-pulse">
-            <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">
-              ⚠️ NEURAL FUEL CRITICAL: {credits} CREDITS REMAINING
-            </span>
-            <button className="bg-orange-500 text-black px-4 py-1 rounded-full text-[9px] font-black">
-              REFUEL NOW
-            </button>
-          </div>
-        )}
-        
-        {/* SCROLLABLE SECTION */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
-          {/* CONNECTION HUB */}
-          <div className="p-4 bg-zinc-900/20 border border-zinc-800 rounded-2xl space-y-3">
-             <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">External Links</span>
-             <div className="flex gap-2">
-                <button 
-                  onClick={() => setIsConnected({...isConnected, github: !isConnected.github})}
-                  className={`flex-1 py-2 text-[10px] font-bold rounded-md border transition-all ${isConnected.github ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-500'}`}>
-                  {isConnected.github ? 'GITHUB: LIVE' : 'CONNECT GITHUB'}
-                </button>
-                <button 
-                  onClick={() => setIsConnected({...isConnected, supabase: !isConnected.supabase})}
-                  className={`flex-1 py-2 text-[10px] font-bold rounded-md border transition-all ${isConnected.supabase ? 'border-[#3ecf8e] text-[#3ecf8e] bg-[#3ecf8e]/5' : 'border-zinc-800 text-zinc-500'}`}>
-                  {isConnected.supabase ? 'SUPABASE: LIVE' : 'CONNECT DB'}
-                </button>
-             </div>
-          </div>
-
-          <div className="space-y-3">
-            {/* THE FOLDER ICON (Asset Vault) */}
-            <div className={`p-5 rounded-2xl ${glassGrey}`}>
-            <div className="flex items-center gap-2 mb-4">
-              <Folder className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="text-[10px] text-zinc-500 font-bold uppercase">Asset Vault</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-               <button 
-                 onClick={() => setView('FILES')}
-                 className="p-3 bg-black/40 border border-zinc-800 rounded-lg text-[9px] hover:border-orange-500 transition-all text-zinc-400"
-               >
-                 MY_AGENTS
-               </button>
-               <button className="p-3 bg-black/40 border border-zinc-800 rounded-lg text-[9px] hover:border-orange-500 transition-all text-zinc-400">PRIVATE_LIBS</button>
-            </div>
-          </div>
-
-          <SidebarButton 
-            label="Script Architect"
-            icon="⚡"
-            isActive={view === 'CREATOR'}
-            onClick={() => setView('CREATOR')}
-          />
-
-          <SidebarButton 
-            label="Marketing Hub"
-            icon="📢"
-            isActive={view === 'MARKETING'}
-            onClick={() => setView('MARKETING')}
-          />
-
-          <SidebarButton 
-            label="Elite Matrix"
-            icon="💎"
-            isActive={view === 'PRICING'}
-            onClick={() => setView('PRICING')}
-          />
-
-          <SidebarButton 
-            label="Vault Guardian"
-            icon="⚖️"
-            isActive={view === 'SETTINGS'}
-            onClick={() => setView('SETTINGS')}
-          />
-
-          <div className="pt-4 border-t border-zinc-800 flex flex-col gap-3">
-            <button 
-              onClick={() => setShowContact(true)}
-              className="text-[10px] font-black text-zinc-600 hover:text-orange-500 transition-colors uppercase tracking-widest text-left"
-            >
-              Contact
-            </button>
-            <button 
-              onClick={() => setShowAiFeatures(true)}
-              className="text-[10px] font-black text-zinc-600 hover:text-orange-500 transition-colors uppercase tracking-widest text-left"
-            >
-              AI Features
-            </button>
-
-            {/* THE DROPDOWN SELECTOR */}
-            <div className="relative group mt-4">
-              <div className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center cursor-pointer group-hover:border-orange-500/30 transition-all">
-                <span className="text-zinc-400 text-[11px] font-bold uppercase">{credits} credits / month</span>
-                <span className="text-zinc-600 group-hover:text-orange-500">▼</span>
-              </div>
-              
-              {/* HIDDEN OPTIONS MENU */}
-              <div className="absolute top-full left-0 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl hidden group-hover:block z-50 overflow-hidden shadow-2xl">
-                {creditOptions.map((opt) => (
-                  <button key={opt.label} className="w-full p-4 text-left text-[10px] font-bold text-zinc-500 hover:bg-orange-500/10 hover:text-orange-500 border-b border-zinc-800 last:border-0 transition-all">
-                    {opt.label} — <span className="text-white">{opt.price}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          {/* API VAULT SECTION */}
-          <div className={`border transition-all duration-300 rounded-2xl overflow-hidden ${showApiVault ? 'border-orange-500/40 bg-orange-500/5' : 'border-zinc-800 bg-zinc-900/10'}`}>
-            <button 
-              onClick={() => setShowApiVault(!showApiVault)}
-              className="w-full p-5 flex items-center justify-between text-[11px] font-bold text-zinc-400 hover:text-white transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Key className={`w-3.5 h-3.5 ${showApiVault ? 'text-orange-500' : 'text-zinc-600'}`} />
-                <span className="tracking-widest uppercase">NEURAL API VAULT</span>
-              </div>
-              <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor] ${apiKeys.gemini && apiKeys.chatgpt && apiKeys.agent ? 'bg-green-500 text-green-500' : 'bg-zinc-700 text-zinc-700'}`}></div>
-            </button>
-            
-            {showApiVault && (
-              <div className="px-5 pb-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Gemini Key</label>
-                  <div className="relative">
-                    <input 
-                      type="password"
-                      value={apiKeys.gemini}
-                      onChange={(e) => handleKeyChange('gemini', e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
-                      placeholder="Paste Gemini API Key..."
-                    />
-                    <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">ChatGPT Key</label>
-                  <div className="relative">
-                    <input 
-                      type="password"
-                      value={apiKeys.chatgpt}
-                      onChange={(e) => handleKeyChange('chatgpt', e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
-                      placeholder="Paste OpenAI API Key..."
-                    />
-                    <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] text-orange-500/80 uppercase font-black tracking-widest">Agent Key (Neural Core)</label>
-                  <div className="relative">
-                    <input 
-                      type="password"
-                      value={apiKeys.agent}
-                      onChange={(e) => handleKeyChange('agent', e.target.value)}
-                      className="w-full bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-200"
-                      placeholder="Paste Agent API Key..."
-                    />
-                    <Zap className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[#ff6900]/50" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Kimi Key</label>
-                  <div className="relative">
-                    <input 
-                      type="password"
-                      value={apiKeys.kimi}
-                      onChange={(e) => handleKeyChange('kimi', e.target.value)}
-                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300"
-                      placeholder="Paste Kimi API Key..."
-                    />
-                    <Cpu className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-700" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-          {/* TEASER FOR AGENT BUILDER */}
-          <div className="p-5 border border-dashed border-zinc-800 bg-zinc-900/10 rounded-2xl group hover:border-orange-500/30 transition-all cursor-not-allowed mt-4">
-             <div className="flex items-center justify-between mb-3">
-               <span className="text-[8px] text-zinc-500 font-black uppercase tracking-[0.3em]">Coming Soon</span>
-               <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-orange-500/50 transition-colors"></div>
-             </div>
-             <p className="text-[11px] text-zinc-400 font-black uppercase tracking-widest group-hover:text-white transition-colors">Build Your Own Agent</p>
-             <p className="text-[9px] text-zinc-600 mt-2 font-medium leading-relaxed">Custom neural workflows for automated execution.</p>
-          </div>
         </div>
       </aside>
 
-      {/* THE CANVAS / MAIN VIEW */}
-      <main className="flex-1 h-screen overflow-hidden flex flex-col relative custom-scrollbar">
-        <div className="flex-1 overflow-y-auto custom-scrollbar pb-40 lg:pb-24">
-          {view === 'CREATOR' && renderCreatorView()}
+      {/* 2. THE MAIN STAGE (Scrollable & Contained) */}
+      <main className="flex-1 overflow-y-auto bg-zinc-950 relative custom-scrollbar">
+        <div className="max-w-5xl mx-auto p-12 pb-32">
+          {view === 'PROFILE' && renderProfilePage()}
           {view === 'MARKETING' && renderMarketingView()}
-          {view === 'PRICING' && renderPricingView()}
+          {view === 'SETTINGS' && renderSettingsPage()}
+          {view === 'ACCOUNT' && renderAccountPage()}
+          {view === 'DATABASE' && renderDatabaseView()}
+          {view === 'LANDING_TEST' && renderLandingTest()}
+          
+          {/* Fallbacks for other views if needed */}
+          {view === 'CREATOR' && renderCreatorView()}
           {view === 'HOME' && renderHomeView()}
           {view === 'STATS' && renderStatsView()}
           {view === 'FILES' && renderFilesView()}
           {view === 'MAIL' && renderMailView()}
-          {view === 'SETTINGS' && renderSettingsPage()}
-          {view === 'PROFILE' && renderProfilePage()}
-          {view === 'ACCOUNT' && renderAccountPage()}
+          {view === 'PRICING' && renderPricingView()}
         </div>
 
-        {/* Input Dock (Sticky at bottom of main view) */}
-        <div className="bg-[#080808] p-4 lg:p-5 border-t border-[#181818] z-20">
-          {/* AI Feature Chips from Image */}
-          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 no-scrollbar">
-            <button 
-              onClick={() => setShowAiFeatures(true)}
-              className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all flex items-center gap-2 whitespace-nowrap"
-            >
-              <Zap className="w-3 h-3 text-[#ff6900]" />
-              AI Features
-            </button>
-            <button 
-              onClick={() => setTerminal(prev => prev + "\n[System]: Agent Builder UI initialization protocol engaged. Coming soon.")}
-              className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all whitespace-nowrap"
-            >
-              Implement Agent Builder UI
-            </button>
-            <button 
-              onClick={() => setShowApiVault(true)}
-              className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-full text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-orange-500/50 transition-all whitespace-nowrap"
-            >
-              Enhance API Key...
-            </button>
-          </div>
-
-          <textarea 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); executeMission(); }}}
-            className="w-full h-20 lg:h-24 bg-transparent text-sm outline-none resize-none placeholder-zinc-800 text-zinc-300 font-medium" 
-            placeholder="Make changes, add new features, ask for anything" 
-          />
-
-          {/* PROGRESS BAR FROM IMAGE */}
-          <div className="space-y-2">
-            <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
-              <div className="w-[80%] h-full bg-orange-500 shadow-[0_0_10px_#ea580c]" />
+        {/* SETTINGS DRAWER (Keep it for extra config if needed) */}
+        <div className={`fixed inset-y-0 right-0 w-[400px] bg-[#050505] border-l border-zinc-900 z-[60] transition-transform duration-500 shadow-2xl ${showSettingsDrawer ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="p-8 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">System Settings</h2>
+              <button onClick={() => setShowSettingsDrawer(false)} className="p-2 hover:bg-zinc-900 rounded-lg transition-colors">
+                <X size={20} />
+              </button>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between border-t border-[#181818] pt-4">
-             <div className="flex gap-3 items-center">
-                <button className="text-zinc-700 hover:text-zinc-400 transition-colors">
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button className="text-zinc-700 hover:text-zinc-400 transition-colors">
-                  <Radar className="w-4 h-4" />
-                </button>
-                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                <button onClick={() => fileInputRef.current?.click()} className={`transition-colors ${attachment ? 'text-orange-500' : 'text-zinc-700 hover:text-orange-500'}`}>
-                  <Plus className="w-5 h-5" />
-                </button>
-                {attachment && (
-                  <div className="flex items-center gap-2 px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded-md animate-in fade-in slide-in-from-left-2">
-                    <span className="text-[9px] text-orange-500 font-bold truncate max-w-[80px]">{attachment.name}</span>
-                    <button onClick={() => setAttachment(null)} className="text-orange-500 hover:text-white transition-colors">
-                      <X size={12} />
-                    </button>
+            <div className="flex-1 space-y-8 overflow-y-auto pr-2 custom-scrollbar">
+              {/* API KEYS */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Neural API Keys</label>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] text-zinc-700 uppercase font-black">Gemini Key</label>
+                    <input 
+                      type="password"
+                      value={apiKeys.gemini}
+                      onChange={(e) => handleKeyChange('gemini', e.target.value)}
+                      className={`w-full bg-black/40 border ${validationErrors.gemini ? 'border-red-500/50' : 'border-zinc-800'} rounded-lg px-3 py-2 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300`}
+                      placeholder="Paste Key..."
+                    />
+                    {validationErrors.gemini && <p className="text-[7px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.gemini}</p>}
                   </div>
-                )}
-                <div className="flex bg-zinc-900/50 rounded-lg p-1 gap-1 border border-[#222]">
-                  {['GEMINI', 'CHATGPT'].map(m => (
-                    <button 
-                      key={m} 
-                      onClick={() => setModel(m as any)} 
-                      className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${model === m ? 'bg-[#ea580c] text-black shadow-[0_0_10px_rgba(234,88,12,0.3)]' : 'text-zinc-500 hover:text-zinc-300'}`}
-                    >
-                      {m}
-                    </button>
-                  ))}
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] text-zinc-700 uppercase font-black">ChatGPT Key</label>
+                    <input 
+                      type="password"
+                      value={apiKeys.chatgpt}
+                      onChange={(e) => handleKeyChange('chatgpt', e.target.value)}
+                      className={`w-full bg-black/40 border ${validationErrors.chatgpt ? 'border-red-500/50' : 'border-zinc-800'} rounded-lg px-3 py-2 text-[10px] outline-none focus:border-orange-500/50 transition-all text-zinc-300`}
+                      placeholder="Paste Key..."
+                    />
+                    {validationErrors.chatgpt && <p className="text-[7px] text-red-500 font-bold uppercase tracking-widest">{validationErrors.chatgpt}</p>}
+                  </div>
                 </div>
-             </div>
-             <button 
-               onClick={() => executeMission()}
-               disabled={isLoading || !input.trim()}
-               className="w-10 h-10 bg-[#ea580c] rounded-full flex items-center justify-center shadow-[0_0_15px_#ea580c66] hover:scale-110 active:scale-95 transition-all disabled:opacity-50">
-               <ArrowUp className="text-black w-5 h-5" strokeWidth={3} />
-             </button>
+              </div>
+
+              {/* SYSTEM VAULT */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">System Vault</label>
+                <div className="space-y-3">
+                   <button 
+                     onClick={() => setIsConnected({...isConnected, github: !isConnected.github})}
+                     className={`w-full py-2 text-[10px] font-bold rounded-lg border transition-all ${isConnected.github ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-500'}`}>
+                     {isConnected.github ? 'GITHUB: LIVE' : 'CONNECT GITHUB'}
+                   </button>
+                   <button 
+                     onClick={() => setIsConnected({...isConnected, supabase: !isConnected.supabase})}
+                     className={`w-full py-2 text-[10px] font-bold rounded-lg border transition-all ${isConnected.supabase ? 'border-orange-500 text-orange-500 bg-orange-500/5' : 'border-zinc-800 text-zinc-500'}`}>
+                     {isConnected.supabase ? 'SUPABASE: LIVE' : 'CONNECT DB'}
+                   </button>
+                </div>
+              </div>
+
+              {/* CREDITS */}
+              <div className="p-5 bg-orange-500/5 border border-orange-500/20 rounded-2xl">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Neural Fuel</span>
+                  <span className="text-orange-500 font-black text-xs">{credits} CR</span>
+                </div>
+                <button className="w-full py-2 bg-orange-500 text-black font-black text-[9px] uppercase tracking-widest rounded-lg hover:bg-orange-400 transition-all">
+                  Refuel Now
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
-
-      {/* FLOATING NAV */}
-      <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 px-4 sm:px-10 py-3 bg-[#080808]/90 backdrop-blur-2xl border border-orange-500/10 rounded-full flex items-center gap-3 sm:gap-10 z-50 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-[95vw] overflow-x-auto no-scrollbar">
-        <button 
-          onClick={() => setView('HOME')}
-          className={`transition-all duration-300 ${view === 'HOME' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <Home className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        <button 
-          onClick={() => setView('STATS')}
-          className={`transition-all duration-300 ${view === 'STATS' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <LayoutGrid className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        <button 
-          onClick={() => setView('CREATOR')}
-          className={`w-12 h-12 border rounded-2xl flex items-center justify-center transition-all duration-300 group ${view === 'CREATOR' ? 'border-orange-500/60 bg-orange-500/10 shadow-[0_0_20px_rgba(234,88,12,0.2)]' : 'border-orange-500/30 bg-orange-500/5 shadow-[0_0_20px_rgba(234,88,12,0.1)] hover:border-orange-500/60'}`}
-        >
-           <Wrench className={`w-6 h-6 group-hover:scale-110 transition-transform ${view === 'CREATOR' ? 'text-orange-500' : 'text-orange-500'}`} strokeWidth={2} />
-        </button>
-        <button 
-          onClick={() => setView('MARKETING')}
-          className={`transition-all duration-300 ${view === 'MARKETING' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <Megaphone className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        <button 
-          onClick={() => setView('PRICING')}
-          className={`transition-all duration-300 ${view === 'PRICING' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <DollarSign className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        {loginMode === 'ADMIN' && (
-          <button 
-            onClick={() => setView('MAIL')}
-            className={`transition-all duration-300 ${view === 'MAIL' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-          >
-            <Mail className="w-5 h-5" strokeWidth={1.5} />
-          </button>
-        )}
-        <button 
-          onClick={() => setView('FILES')}
-          className={`transition-all duration-300 ${view === 'FILES' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <Folder className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        <button 
-          onClick={() => setView('SETTINGS')}
-          className={`transition-all duration-300 ${view === 'SETTINGS' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <Settings className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        <button 
-          onClick={() => setView('ACCOUNT')}
-          className={`transition-all duration-300 ${view === 'ACCOUNT' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <CreditCard className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-        <button 
-          onClick={() => setView('PROFILE')}
-          className={`transition-all duration-300 ${view === 'PROFILE' ? 'text-orange-500' : 'text-orange-500/40 hover:text-orange-500'}`}
-        >
-          <User className="w-5 h-5" strokeWidth={1.5} />
-        </button>
-      </div>
     </div>
   );
 }
